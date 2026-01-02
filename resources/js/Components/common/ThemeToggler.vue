@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { useTheme } from '../layout/ThemeProvider.vue'
+import { useTheme } from '../Layout/ThemeProvider.vue'
 
 const { toggleTheme } = useTheme()
 </script>
