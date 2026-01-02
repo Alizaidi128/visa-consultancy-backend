@@ -22,8 +22,9 @@ use App\Http\Controllers\VisaReviewController;
 use App\Http\Controllers\Auth\MobileAuthRedirectController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
+
 /*
 |--------------------------------------------------------------------------
 | Email Verification Success Page
