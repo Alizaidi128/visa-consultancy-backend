@@ -17,39 +17,21 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Trust Reverse Proxies (CRITICAL FOR RAILWAY)
-        |--------------------------------------------------------------------------
-        | Required for:
-        | - HTTPS detection
-        | - Signed URLs
-        | - Email verification links
-        */
+        // ✅ TRUST RAILWAY REVERSE PROXY (LARAVEL 12 COMPATIBLE)
         $middleware->trustProxies(
-            $middleware->trustProxies(
-                '*',
-                Request::HEADER_X_FORWARDED_FOR |
-                Request::HEADER_X_FORWARDED_HOST |
-                Request::HEADER_X_FORWARDED_PORT |
-                Request::HEADER_X_FORWARDED_PROTO
-            );
+            '*',
+            Request::HEADER_X_FORWARDED_FOR |
+            Request::HEADER_X_FORWARDED_HOST |
+            Request::HEADER_X_FORWARDED_PORT |
+            Request::HEADER_X_FORWARDED_PROTO
+        );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Web Middleware
-        |--------------------------------------------------------------------------
-        */
+        // Inertia middleware
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Route Middleware Aliases (Spatie)
-        |--------------------------------------------------------------------------
-        */
+        // Spatie middleware aliases
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
