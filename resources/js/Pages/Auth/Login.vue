@@ -228,7 +228,7 @@
 import { Link } from '@inertiajs/vue3'
 import { useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
-import CommonGridShape from '@/components/common/CommonGridShape.vue'
+import CommonGridShape from '@/Components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/Layouts/FullScreenLayout.vue'
 defineOptions({
     layout: FullScreenLayout,

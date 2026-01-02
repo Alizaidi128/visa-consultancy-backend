@@ -312,7 +312,7 @@
 
 <script setup lang="ts">
 import FullScreenLayout from '@/Layouts/FullScreenLayout.vue'
-import CommonGridShape from '@/components/common/CommonGridShape.vue'
+import CommonGridShape from '@/Components/common/CommonGridShape.vue'
 import { ref } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
 
