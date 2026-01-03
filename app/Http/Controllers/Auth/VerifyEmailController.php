@@ -23,13 +23,33 @@ class VerifyEmailController extends Controller
             abort(403, 'Invalid verification link.');
         }
 
-        if ($user->hasVerifiedEmail()) {
+        /*if ($user->hasVerifiedEmail()) {
             return redirect()->route('verification.success');
         }
 
         $user->markEmailAsVerified();
         event(new Verified($user));
 
+        return redirect()->route('verification.success');*/
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new Verified($user));
+        }
+
+// 📱 Detect mobile
+        $agent = strtolower($request->header('User-Agent', ''));
+
+        $isMobile = str_contains($agent, 'android')
+            || str_contains($agent, 'iphone')
+            || str_contains($agent, 'ipad');
+
+// ✅ Mobile → deep link back to app
+        if ($isMobile) {
+            return redirect()->away('visa-consultancy://auth/verified');
+        }
+
+// 🌐 Web → normal success page
         return redirect()->route('verification.success');
+
     }
 }
