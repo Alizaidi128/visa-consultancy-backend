@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\VisaAssignmentApiController;
 use Illuminate\Notifications\DatabaseNotification;
 use App\Http\Controllers\Api\FcmTokenController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Api\ClientApiController;
+use App\Http\Controllers\Api\ClientFamilyMemberApiController;
+use App\Http\Controllers\Api\VisaFamilyMemberApiController;
 
 Route::prefix('v1')->group(function () {
     Route::get('/debug/firebase', function () {
@@ -105,6 +108,37 @@ Route::prefix('v1')->group(function () {
         });
         Route::delete('/fcm-token', [FcmTokenController::class, 'destroy']);
 
+// Clients
+        Route::get('/clients', [ClientApiController::class, 'index']);
+        Route::post('/clients', [ClientApiController::class, 'store']);
+        Route::get('/clients/{client}', [ClientApiController::class, 'show']);
 
+// Family Members
+        Route::get(
+            '/clients/{client}/family-members',
+            [ClientFamilyMemberApiController::class, 'index']
+        );
+        Route::post(
+            '/clients/{client}/family-members',
+            [ClientFamilyMemberApiController::class, 'store']
+        );
+        Route::patch(
+            '/family-members/{familyMember}',
+            [ClientFamilyMemberApiController::class, 'update']
+        );
+        Route::delete(
+            '/family-members/{familyMember}',
+            [ClientFamilyMemberApiController::class, 'destroy']
+        );
+
+// Visa ↔ Family
+        Route::post(
+            '/visas/{visa}/family-members',
+            [VisaFamilyMemberApiController::class, 'store']
+        );
+        Route::delete(
+            '/visas/{visa}/family-members/{familyMember}',
+            [VisaFamilyMemberApiController::class, 'destroy']
+        );
     });
 });
