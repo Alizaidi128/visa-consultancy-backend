@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useSidebar } from '@/composables/useSidebar'
 
-import logo from '@/assets/images/logo/logo.png'
+import logo from '@/assets/images/logo/logo-light.png'
 import logoDark from '@/assets/images/logo/logo-dark.png'
 import logoIcon from '@/assets/images/logo/logo-icon.png'
 

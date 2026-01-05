@@ -211,7 +211,7 @@
                         <common-grid-shape />
                         <div class="flex flex-col items-center max-w-xs">
                             <Link href="/" class="block mb-4">
-                                <img width="{231}" height="{48}" src="@/assets/images/logo/auth-logo.png" alt="Logo" />
+                                <img width="{231}" height="{48}" src="@/assets/images/logo/logo-dark.png" alt="Logo" />
                             </Link>
 <!--                            <p class="text-center text-gray-400 dark:text-white/60">
                                Visa Simpify - sub
@@ -252,5 +252,5 @@ const handleSubmit = () => {
         onFinish: () => form.reset('password'),
     })
 }
-import logo from '@/assets/images/logo/auth-logo.png'
+import logo from '@/assets/images/logo/logo-dark.png'
 </script>
