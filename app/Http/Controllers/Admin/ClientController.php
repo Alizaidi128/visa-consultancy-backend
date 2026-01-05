@@ -103,4 +103,75 @@ class ClientController extends Controller
             'client' => $client,
         ]);
     }
+    // ClientController.php
+
+    public function edit(Client $client)
+    {
+        return Inertia::render('Admin/Clients/Edit', [
+            'client' => $client,
+        ]);
+    }
+
+    public function update(Request $request, Client $client)
+    {
+        $validated = $request->validate([
+            'first_name'        => 'required|string|max:255',
+            'last_name'         => 'required|string|max:255',
+            'gender'            => 'nullable|in:male,female,other',
+            'email'             => 'nullable|email|max:255',
+            'phone'             => 'nullable|string|max:30',
+            'passport_number'   => 'nullable|string|max:50',
+            'passport_expiry'   => 'nullable|date|after_or_equal:today',
+        ]);
+
+        DB::transaction(function () use ($validated, $client) {
+
+            $email = $validated['email'] ?? null;
+
+            if ($email) {
+                $user = User::where('email', $email)->first();
+
+                if ($user) {
+                    // ❗ Ignore current client
+                    $existingClient = Client::where('user_id', $user->id)
+                        ->where('id', '!=', $client->id)
+                        ->first();
+
+                    if ($existingClient) {
+                        throw ValidationException::withMessages([
+                            'email' => 'This email already belongs to another client.',
+                        ]);
+                    }
+
+                    // ✅ Auto-link user if safe
+                    $validated['user_id'] = $user->id;
+                }
+            }
+
+            // ✅ Update client
+            $client->update($validated);
+        });
+
+        // ✅ No flash — frontend handles success locally
+        return back();
+    }
+
+
+
+    public function destroy(Client $client)
+    {
+        // ❗ SAFETY: prevent delete if visas exist
+        if ($client->visaApplications()->exists()) {
+            return back()->withErrors([
+                'delete' => 'Cannot delete client with existing visa applications.',
+            ]);
+        }
+
+        $client->delete();
+
+        return redirect()
+            ->route('admin.clients.index')
+            ->with('success', 'Client deleted successfully.');
+    }
+
 }

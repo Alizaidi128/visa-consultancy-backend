@@ -210,12 +210,20 @@ const updateProfile = () => {
 
                 <div class="md:col-span-2 flex justify-end gap-3">
                     <button type="button" @click="cancelEdit"
-                            class="px-4 py-2 rounded-lg border text-sm">
+                            class="  px-4 py-2 rounded-lg border text-sm font-medium transition
+border-gray-300 text-gray-700 bg-white hover:bg-gray-50
+
+dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800
+dark:hover:bg-gray-700">
                         Cancel
                     </button>
 
                     <button type="submit"
-                            class="px-5 py-2 rounded-lg bg-primary text-white text-sm">
+                            class="  px-4 py-2 rounded-lg border text-sm font-medium transition
+border-gray-300 text-gray-700 bg-white hover:bg-gray-50
+
+dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800
+dark:hover:bg-gray-700">
                         Save Changes
                     </button>
                 </div>

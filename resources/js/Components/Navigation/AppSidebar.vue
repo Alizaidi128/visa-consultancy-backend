@@ -43,22 +43,33 @@ const adminMenu = [
     {
         title: 'Menu',
         items: [
-            { icon: GridIcon, name: 'Dashboard', path: '/dashboard' },
+            {
+                icon: GridIcon,
+                name: 'Dashboard',
+                path: '/dashboard',
+                components: ['Admin/Dashboard'],
+            },
             {
                 icon: UserCircleIcon,
                 name: 'Clients',
                 path: '/admin/clients',
+                components: [
+                    'Admin/Clients/Index',
+                    'Admin/Clients/Show',
+                    'Admin/Clients/Edit',
+                ],
             },
             {
                 icon: UserCircleIcon,
                 name: 'Create Client',
                 path: '/admin/clients/create',
+                components: ['Admin/Clients/Create'],
             },
-
             {
                 icon: UserCircleIcon,
                 name: 'User Approvals',
                 path: '/admin/user-approvals',
+                components: ['Admin/UserApprovals/Index'],
                 badge: pendingApprovals,
             },
 
@@ -115,7 +126,13 @@ const menuGroups = computed(() => {
 /* ------------------------------------------------------------------
    ACTIVE ROUTE CHECK (INERTIA)
 ------------------------------------------------------------------ */
-const isActive = (path) => page.url.startsWith(path)
+const isActive = (item) => {
+    return item.components?.includes(page.component)
+}
+
+
+
+
 </script>
 
 <template>
@@ -188,7 +205,7 @@ const isActive = (path) => page.url.startsWith(path)
                                     :href="item.path"
                                     :class="[
                                         'menu-item group',
-                                        isActive(item.path)
+                                        isActive(item)
                                             ? 'menu-item-active'
                                             : 'menu-item-inactive',
                                         !isExpanded && !isHovered
@@ -198,7 +215,7 @@ const isActive = (path) => page.url.startsWith(path)
                                 >
                                     <span
                                         :class="[
-                                            isActive(item.path)
+                                            isActive(item)
                                                 ? 'menu-item-icon-active'
                                                 : 'menu-item-icon-inactive',
                                         ]"

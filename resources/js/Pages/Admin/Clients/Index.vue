@@ -12,17 +12,17 @@ defineProps({
             <a
                 href="/admin/clients/create"
                 class="
-                inline-flex items-center gap-2
-                px-4 py-2
-                text-sm font-semibold
-                text-white
-                bg-primary-600 hover:bg-primary-700
-                rounded-lg
-                transition
-            "
+        px-4 py-2 rounded-lg border text-sm font-medium transition
+border-gray-300 text-gray-700 bg-white hover:bg-gray-50
+
+dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800
+dark:hover:bg-gray-700
+
+    "
             >
                 + Create Client
             </a>
+
         </template>
     </PageHeader>
 
@@ -92,18 +92,33 @@ defineProps({
                 </td>
 
                 <td class="px-6 py-4 text-right">
-                    <a
-                        :href="`/admin/clients/${client.id}`"
-                        class="
-                                inline-flex items-center
-                                text-sm font-medium
-                                text-gray-700 dark:text-gray-300
-                                hover:underline
-                            "
-                    >
-                        View
-                    </a>
+                    <div class="inline-flex items-center gap-4">
+                        <!-- VIEW -->
+                        <a
+                            :href="`/admin/clients/${client.id}`"
+                            class="
+                text-sm font-medium
+                text-gray-700 dark:text-gray-300
+                hover:underline
+            "
+                        >
+                            View
+                        </a>
+
+                        <!-- EDIT -->
+                        <a
+                            :href="`/admin/clients/${client.id}/edit`"
+                            class="
+                text-sm font-medium
+                text-blue-600 dark:text-blue-400
+                hover:underline
+            "
+                        >
+                            Edit
+                        </a>
+                    </div>
                 </td>
+
             </tr>
 
             <!-- Empty state -->
