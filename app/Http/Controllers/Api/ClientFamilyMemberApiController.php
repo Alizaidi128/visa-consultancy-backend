@@ -7,9 +7,10 @@ use App\Http\Resources\ClientFamilyMemberResource;
 use App\Models\Client;
 use App\Models\ClientFamilyMember;
 use Illuminate\Http\Request;
-
+use App\Support\ValidatesClientFamilyMember;
 class ClientFamilyMemberApiController extends Controller
 {
+    use ValidatesClientFamilyMember;
     /**
      * List family members
      */
@@ -36,9 +37,11 @@ class ClientFamilyMemberApiController extends Controller
     {
         $this->authorize('create', ClientFamilyMember::class);
 
-        $validated = app(
-            \App\Http\Controllers\Admin\ClientFamilyMemberController::class
-        )->validateData($request, $client);
+        $validated = $this->validateFamilyMember(
+            $request,
+            $client
+        );
+
 
         $member = $client->familyMembers()->create($validated);
 
@@ -52,13 +55,12 @@ class ClientFamilyMemberApiController extends Controller
     {
         $this->authorize('update', $familyMember);
 
-        $validated = app(
-            \App\Http\Controllers\Admin\ClientFamilyMemberController::class
-        )->validateData(
+        $validated = $this->validateFamilyMember(
             $request,
             $familyMember->client,
             $familyMember->id
         );
+
 
         $familyMember->update($validated);
 

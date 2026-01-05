@@ -7,15 +7,17 @@ use App\Models\Client;
 use App\Models\ClientFamilyMember;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Support\ValidatesClientFamilyMember;
 
 class ClientFamilyMemberController extends Controller
 {
+    use ValidatesClientFamilyMember;
     /* -------------------------------------------------------
        STORE
     ------------------------------------------------------- */
     public function store(Request $request, Client $client)
     {
-        $validated = $this->validateData($request, $client);
+        $validated = $this->validateFamilyMember($request, $client);
 
         $client->familyMembers()->create($validated);
 
@@ -27,11 +29,12 @@ class ClientFamilyMemberController extends Controller
     ------------------------------------------------------- */
     public function update(Request $request, ClientFamilyMember $familyMember)
     {
-        $validated = $this->validateData(
+        $validated = $this->validateFamilyMember(
             $request,
             $familyMember->client,
             $familyMember->id
         );
+
 
         $familyMember->update($validated);
 
