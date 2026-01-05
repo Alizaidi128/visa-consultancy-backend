@@ -30,7 +30,8 @@ class VisaApplicationController extends Controller
         $this->authorize('view', $visa);
 
         $visa->load([
-            'client',
+            'client.familyMembers',   // all client family members
+            'familyMembers',          // attached to this visa
             'documents' => fn ($q) => $q->latest(),
             'documents.uploader',
             'consultant',
@@ -57,4 +58,5 @@ class VisaApplicationController extends Controller
             'activityLogs' => $activityLogs,
         ]);
     }
+
 }

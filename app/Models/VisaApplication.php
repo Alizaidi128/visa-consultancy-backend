@@ -251,5 +251,13 @@ class VisaApplication extends Model
             ($uploadedCount / $requiredDocs->count()) * 100
         );
     }
+    public function familyMembers()
+    {
+        return $this->belongsToMany(
+            \App\Models\ClientFamilyMember::class,
+            'visa_application_family_member'
+        )->withPivot('role')->withTimestamps();
+    }
+
 
 }

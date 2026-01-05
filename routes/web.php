@@ -2,51 +2,72 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+// Admin Controllers
 use App\Http\Controllers\Admin\ClientController;
-use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Admin\VisaApplicationController;
-//use App\Http\Controllers\Admin\DocumentReviewController;
-use App\Http\Controllers\Admin\VisaWorkflowController;
 use App\Http\Controllers\Admin\VisaAssignmentController;
 use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Client\DashboardController;
-use Inertia\Inertia;
+use App\Http\Controllers\Admin\UserApprovalController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+
+// Consultant Controllers
 use App\Http\Controllers\Consultant\DashboardController as ConsultantDashboard;
 use App\Http\Controllers\Consultant\VisaApplicationController as ConsultantVisaController;
+
+// Client Controllers
+use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Client\VisaApplicationController as ClientVisaController;
-use App\Http\Controllers\Admin\UserApprovalController;
 use App\Http\Controllers\Client\VisaBulkDocumentController;
+
+// Shared
 use App\Http\Controllers\DocumentReviewController;
 use App\Http\Controllers\VisaReviewController;
-use App\Http\Controllers\Auth\MobileAuthRedirectController;
-
+use App\Http\Controllers\Admin\ClientFamilyMemberController;
+use App\Http\Controllers\Admin\VisaFamilyMemberController;
+/*
+|--------------------------------------------------------------------------
+| Root
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Email Verification Success Page
+| Email Verification Success
 |--------------------------------------------------------------------------
 */
 Route::get('/email-verified', function () {
     return Inertia::render('Auth/EmailVerified');
 })->name('verification.success');
 
+/*
+|--------------------------------------------------------------------------
+| Admin Dashboard
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified', 'role:admin'])
     ->get('/dashboard', [AdminDashboard::class, 'index'])
     ->name('dashboard');
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated Shared Routes
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/notifications', function () {
-        return Inertia::render('Notifications/Index');
-    })->name('notifications.index');
+    // Notifications
+    Route::get('/notifications', fn () => Inertia::render('Notifications/Index'))
+        ->name('notifications.index');
 
     Route::post('/notifications/{notification}/read', function ($id) {
         auth()->user()
@@ -57,6 +78,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         return back();
     })->name('notifications.read');
+
     // Document review
     Route::post('/documents/{document}/approve', [DocumentReviewController::class, 'approve'])
         ->name('documents.approve');
@@ -82,31 +104,37 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
 
-        Route::get('/clients', [ClientController::class, 'index'])->name('admin.clients.index');
-        Route::get('/clients/create', [ClientController::class, 'create'])->name('admin.clients.create');
-        Route::post('/clients', [ClientController::class, 'store'])->name('admin.clients.store');
+        // Clients
+        Route::get('/clients', [ClientController::class, 'index'])
+            ->name('clients.index');
 
-        Route::get('/visa-applications', [VisaApplicationController::class, 'index'])->name('admin.visa.index');
-        Route::get('/visa-applications/{visa}', [VisaApplicationController::class, 'show'])->name('admin.visa.show');
+        Route::get('/clients/create', [ClientController::class, 'create'])
+            ->name('clients.create');
 
-       // Route::post('/documents/{document}/approve', [DocumentReviewController::class, 'approve'])->name('admin.documents.approve');
-       // Route::post('/documents/{document}/reject', [DocumentReviewController::class, 'reject'])->name('admin.documents.reject');
-        Route::post(
-            '/visas/{visa}/approve',
-            [\App\Http\Controllers\VisaReviewController::class, 'approve']
-        )->name('visas.approve');
+        Route::post('/clients', [ClientController::class, 'store'])
+            ->name('clients.store');
 
-        Route::post(
-            '/visas/{visa}/reject',
-            [\App\Http\Controllers\VisaReviewController::class, 'reject']
-        )->name('visas.reject');
+        Route::get('/clients/{client}', [ClientController::class, 'show'])
+            ->name('clients.show');
 
+        Route::post('/clients/check-email', [ClientController::class, 'checkEmail'])
+            ->name('clients.check-email');
 
-      //  Route::post('/visa-applications/{visa}/status', [VisaWorkflowController::class, 'updateStatus'])->name('admin.visa.status.update');
-        Route::post('/visa-applications/{visa}/assign-consultant', [VisaAssignmentController::class, 'assign'])->name('admin.visa.assign');
+        // Visa Applications
+        Route::get('/visa-applications', [VisaApplicationController::class, 'index'])
+            ->name('visa.index');
 
-        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('admin.activity.logs');
-        Route::get('/clients/{client}', [ClientController::class, 'show'])->name('admin.clients.show');
+        Route::get('/visa-applications/{visa}', [VisaApplicationController::class, 'show'])
+            ->name('visa.show');
+
+        Route::post('/visa-applications/{visa}/assign-consultant', [VisaAssignmentController::class, 'assign'])
+            ->name('visa.assign');
+
+        // Activity Logs
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+            ->name('activity.logs');
+
+        // User Approvals
         Route::get('/user-approvals', [UserApprovalController::class, 'index'])
             ->name('user-approvals.index');
 
@@ -115,7 +143,6 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::post('/user-approvals/{user}/reject', [UserApprovalController::class, 'reject'])
             ->name('user-approvals.reject');
-
         Route::get('/visa-documents', [\App\Http\Controllers\Admin\VisaTypeDocumentController::class, 'index'])
             ->name('visa-documents.index');
 
@@ -125,6 +152,30 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::post('/visa-documents', [\App\Http\Controllers\Admin\VisaTypeDocumentController::class, 'store'])
             ->name('visa-documents.store');
+        Route::post(
+            '/clients/{client}/family-members',
+            [ClientFamilyMemberController::class, 'store']
+        )->name('admin.clients.family-members.store');
+
+        Route::patch(
+            '/family-members/{familyMember}',
+            [ClientFamilyMemberController::class, 'update']
+        )->name('family-members.update');
+
+        Route::delete(
+            '/family-members/{familyMember}',
+            [ClientFamilyMemberController::class, 'destroy']
+        )->name('family-members.destroy');
+
+        Route::post(
+            '/visa-applications/{visa}/family-members',
+            [VisaFamilyMemberController::class, 'store']
+        )->name('visa.family-members.store');
+
+        Route::delete(
+            '/visa-applications/{visa}/family-members/{familyMember}',
+            [VisaFamilyMemberController::class, 'destroy']
+        )->name('visa.family-members.destroy');
 
     });
 
@@ -138,9 +189,14 @@ Route::middleware(['auth', 'verified', 'role:consultant'])
     ->name('consultant.')
     ->group(function () {
 
-        Route::get('/dashboard', [ConsultantDashboard::class, 'index'])->name('dashboard');
-        Route::get('/visas', [ConsultantVisaController::class, 'index'])->name('visas.index');
-        Route::get('/visas/{visa}', [ConsultantVisaController::class, 'show'])->name('visas.show');
+        Route::get('/dashboard', [ConsultantDashboard::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/visas', [ConsultantVisaController::class, 'index'])
+            ->name('visas.index');
+
+        Route::get('/visas/{visa}', [ConsultantVisaController::class, 'show'])
+            ->name('visas.show');
     });
 
 /*
@@ -168,16 +224,15 @@ Route::middleware(['auth', 'verified', 'role:client'])
         Route::get('/visas/{visa}', [ClientVisaController::class, 'show'])
             ->name('visas.show');
 
-        Route::post(
-            '/visa-applications/{visa}/documents',
-            [\App\Http\Controllers\Client\DocumentController::class, 'store']
-        )->name('visa.documents.store');
+        Route::post('/visa-applications/{visa}/documents', [
+            \App\Http\Controllers\Client\DocumentController::class,
+            'store',
+        ])->name('visa.documents.store');
 
-        Route::post(
-            '/visa-applications/{visa}/documents/bulk',
-            [VisaBulkDocumentController::class, 'store']
-        )->name('client.visa.documents.bulk');
+        Route::post('/visa-applications/{visa}/documents/bulk', [
+            VisaBulkDocumentController::class,
+            'store',
+        ])->name('visa.documents.bulk');
     });
 
-
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

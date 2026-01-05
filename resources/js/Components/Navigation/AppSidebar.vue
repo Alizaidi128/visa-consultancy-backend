@@ -44,7 +44,17 @@ const adminMenu = [
         title: 'Menu',
         items: [
             { icon: GridIcon, name: 'Dashboard', path: '/dashboard' },
-            { icon: UserCircleIcon, name: 'Clients', path: '/admin/clients' },
+            {
+                icon: UserCircleIcon,
+                name: 'Clients',
+                path: '/admin/clients',
+            },
+            {
+                icon: UserCircleIcon,
+                name: 'Create Client',
+                path: '/admin/clients/create',
+            },
+
             {
                 icon: UserCircleIcon,
                 name: 'User Approvals',

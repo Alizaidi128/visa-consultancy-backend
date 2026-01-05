@@ -12,6 +12,7 @@ class Client extends Model
     protected $fillable = [
         'first_name',
         'last_name',
+        'gender', // ✅ REQUIRED
         'email',
         'phone',
         'passport_number',
@@ -20,23 +21,28 @@ class Client extends Model
         'user_id',
     ];
 
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
     public function visaApplications()
     {
         return $this->hasMany(VisaApplication::class);
     }
+
     public function documents()
     {
         return $this->hasManyThrough(Document::class, VisaApplication::class);
     }
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-
+    public function familyMembers()
+    {
+        return $this->hasMany(\App\Models\ClientFamilyMember::class);
+    }
 }

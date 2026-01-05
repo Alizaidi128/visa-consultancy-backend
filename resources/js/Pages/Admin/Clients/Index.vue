@@ -7,7 +7,25 @@ defineProps({
 </script>
 
 <template>
-    <PageHeader title="Clients" />
+    <PageHeader title="Clients">
+        <template #actions>
+            <a
+                href="/admin/clients/create"
+                class="
+                inline-flex items-center gap-2
+                px-4 py-2
+                text-sm font-semibold
+                text-white
+                bg-primary-600 hover:bg-primary-700
+                rounded-lg
+                transition
+            "
+            >
+                + Create Client
+            </a>
+        </template>
+    </PageHeader>
+
 
     <!-- Table Card -->
     <div

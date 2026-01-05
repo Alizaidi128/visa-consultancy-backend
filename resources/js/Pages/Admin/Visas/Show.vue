@@ -4,6 +4,7 @@ import StatusBadge from '@/Components/StatusBadge.vue'
 import { router } from '@inertiajs/vue3'
 import VisaTimeline from '@/Components/VisaTimeline.vue'
 import { ref } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
     visa: Object,
@@ -82,6 +83,59 @@ function assignConsultant() {
         }
     )
 }
+const selectedFamilyMembers = ref([])
+
+function attachFamily() {
+    if (!selectedFamilyMembers.value.length) return
+
+    router.post(
+        `/admin/visa-applications/${props.visa.id}/family-members`,
+        { family_member_ids: selectedFamilyMembers.value },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Move attached members from available → attached
+                selectedFamilyMembers.value.forEach(id => {
+                    const member = props.visa.client.family_members.find(m => m.id === id)
+                    if (member) {
+                        attachedMembers.value.push(member)
+                    }
+                })
+
+                selectedFamilyMembers.value = []
+            },
+        }
+    )
+}
+
+
+function removeFamily(memberId) {
+    router.delete(
+        `/admin/visa-applications/${props.visa.id}/family-members/${memberId}`,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                attachedMembers.value = attachedMembers.value.filter(
+                    m => m.id !== memberId
+                )
+            },
+        }
+    )
+}
+
+
+/**
+ * Local reactive copies (DO NOT mutate props directly)
+ */
+const attachedMembers = ref([...props.visa.family_members])
+const availableFamilyMembers = computed(() => {
+    const attachedIds = attachedMembers.value.map(m => m.id)
+
+    return props.visa.client.family_members.filter(
+        m => !attachedIds.includes(m.id)
+    )
+})
+
 </script>
 
 <template>
@@ -191,6 +245,123 @@ function assignConsultant() {
             >
                 Assign
             </button>
+        </div>
+    </div>
+    <!-- FAMILY MEMBERS ON VISA -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                Family Members on Visa
+            </h2>
+
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+            Select dependents applying with this visa
+        </span>
+        </div>
+
+        <!-- ATTACH FAMILY FORM -->
+        <form
+            @submit.prevent="attachFamily"
+            class="flex flex-col gap-4 max-w-xl"
+        >
+            <!-- MULTI SELECT -->
+            <div>
+                <label class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Available Family Members
+                </label>
+
+                <select
+                    v-model="selectedFamilyMembers"
+                    multiple
+                    class="
+                w-full min-h-[120px]
+                rounded-xl border
+                border-gray-300 dark:border-gray-600
+                bg-white dark:bg-gray-900
+                text-gray-900 dark:text-gray-100
+                px-3 py-2 text-sm
+                focus:outline-none focus:ring-2 focus:ring-blue-500
+            "
+                >
+                    <option
+                        v-for="m in availableFamilyMembers"
+                        :key="m.id"
+                        :value="m.id"
+                    >
+                        {{ m.first_name }} {{ m.last_name }} — {{ m.relationship }}
+                    </option>
+                </select>
+
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Hold <kbd class="px-1 border rounded">Ctrl</kbd> /
+                    <kbd class="px-1 border rounded">Cmd</kbd> to select multiple
+                </p>
+            </div>
+
+            <!-- ATTACH BUTTON (NOW PROPERLY PLACED) -->
+            <button
+                type="submit"
+                class="
+            self-start
+            px-5 py-2.5 rounded-xl
+            bg-blue-600 hover:bg-blue-700
+            text-white text-sm font-medium
+            transition
+            disabled:opacity-50
+        "
+            >
+                Attach
+            </button>
+        </form>
+
+
+        <!-- ATTACHED FAMILY MEMBERS -->
+        <div v-if="visa.family_members.length" class="mt-6">
+            <h3 class="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+                Attached to this Visa
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div
+                    v-for="m in attachedMembers"
+                    :key="m.id"
+                    class="
+                    flex items-center justify-between
+                    rounded-xl border
+                    border-gray-200 dark:border-gray-700
+                    bg-gray-50 dark:bg-gray-900
+                    px-4 py-3
+                "
+                >
+                    <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ m.first_name }} {{ m.last_name }}
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                            {{ m.relationship }}
+                        </p>
+                    </div>
+
+                    <button
+                        @click="removeFamily(m.id)"
+                        class="
+                        text-xs font-medium
+                        text-red-600 dark:text-red-400
+                        hover:underline
+                    "
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div
+            v-else
+            class="mt-6 text-sm text-gray-500 dark:text-gray-400 italic"
+        >
+            No family members attached to this visa yet.
         </div>
     </div>
 
