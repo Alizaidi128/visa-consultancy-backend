@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\VisaApplication;
 use App\Services\VisaDocumentService;
 use Illuminate\Http\Request;
+use App\Models\Document;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 
 class VisaDocumentApiController extends Controller
 {
@@ -90,4 +94,24 @@ class VisaDocumentApiController extends Controller
 
         ]);
     }
+
+
+    public function view(Document $document): StreamedResponse
+    {
+
+        $this->authorize('view', $document);
+
+        $disk = 'public';
+        $path = $document->file_path;
+
+        if (! Storage::disk($disk)->exists($path)) {
+            abort(404, 'Document file not found.');
+        }
+
+        return Storage::disk($disk)->response(
+            $path,
+            $document->original_name
+        );
+    }
+
 }

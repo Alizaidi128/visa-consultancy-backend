@@ -9,7 +9,25 @@ defineProps({
 
 <template>
     <PageHeader title="Visa Applications" />
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
 
+        </h1>
+    <a
+        href="/admin/visa-applications/create"
+        class="
+            inline-flex items-center gap-2
+            px-4 py-2 rounded-lg text-sm font-medium
+            border border-gray-300 dark:border-gray-600
+            text-gray-700 dark:text-gray-300
+            bg-white dark:bg-gray-800
+            hover:bg-gray-100 dark:hover:bg-gray-700
+            transition
+        "
+    >
+        + Create Visa
+    </a>
+    </div>
     <!-- Table Card -->
     <div
         class="

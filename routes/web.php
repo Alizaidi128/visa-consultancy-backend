@@ -130,6 +130,15 @@ Route::middleware(['auth', 'role:admin'])
             ->name('clients.check-email');
 
         // Visa Applications
+        Route::get(
+            '/visa-applications/create',
+            [VisaApplicationController::class, 'create']
+        )->name('visa.create');
+
+        Route::post(
+            '/visa-applications',
+            [VisaApplicationController::class, 'store']
+        )->name('visa.store');
         Route::get('/visa-applications', [VisaApplicationController::class, 'index'])
             ->name('visa.index');
 

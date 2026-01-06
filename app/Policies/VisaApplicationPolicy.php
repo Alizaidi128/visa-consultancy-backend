@@ -55,8 +55,20 @@ class VisaApplicationPolicy
      |---------------------------------------------------------*/
     public function create(User $user): bool
     {
-        return $user->hasRole('client') && $user->isApproved();
+        // ✅ Client: can create own visa
+        if ($user->hasRole('client') && $user->isApproved()) {
+            return true;
+        }
+
+        // ✅ Admin: can create visa for any client
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // ❌ Consultant: not allowed
+        return false;
     }
+
 
     /* ---------------------------------------------------------
      | SUBMIT VISA

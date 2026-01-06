@@ -112,6 +112,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/clients', [ClientApiController::class, 'index']);
         Route::post('/clients', [ClientApiController::class, 'store']);
         Route::get('/clients/{client}', [ClientApiController::class, 'show']);
+        Route::put('/clients/{client}', [ClientApiController::class, 'update']);
+        Route::delete('/clients/{client}', [ClientApiController::class, 'destroy']);
 
 // Family Members
         Route::get(
@@ -139,6 +141,10 @@ Route::prefix('v1')->group(function () {
         Route::delete(
             '/visas/{visa}/family-members/{familyMember}',
             [VisaFamilyMemberApiController::class, 'destroy']
+        );
+        Route::get(
+            '/documents/{document}/view',
+            [VisaDocumentApiController::class, 'view']
         );
     });
 });

@@ -14,6 +14,8 @@ use App\Models\User;
 use App\Policies\VisaApplicationPolicy;
 use App\Policies\DocumentPolicy;
 use App\Policies\UserPolicy;
+use App\Models\Client;
+use App\Policies\ClientPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,7 @@ class AuthServiceProvider extends ServiceProvider
         VisaApplication::class => VisaApplicationPolicy::class,
         Document::class => DocumentPolicy::class,
         User::class => UserPolicy::class,
+        Client::class => ClientPolicy::class,
     ];
 
     /**

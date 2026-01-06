@@ -9,7 +9,7 @@ defineProps({
 
 <template>
     <!-- Header with action -->
-    <PageHeader title="My Visa Applications">
+<!--    <PageHeader title="My Visa Applications">
         <a
             href="/client/visas/create"
             class="
@@ -25,7 +25,7 @@ defineProps({
         >
             New Visa Application
         </a>
-    </PageHeader>
+    </PageHeader>-->
 
     <!-- Table Card -->
     <div

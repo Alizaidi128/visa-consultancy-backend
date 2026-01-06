@@ -23,10 +23,14 @@ class ClientResource extends JsonResource
                 $this->whenLoaded('familyMembers')
             ),
 
-            'visa_count' => $this->whenLoaded(
-                'visaApplications',
-                fn () => $this->visaApplications->count()
-            ),
+            'visa_count' =>
+                $this->visa_applications_count
+                ?? $this->whenLoaded(
+                    'visaApplications',
+                    fn () => $this->visaApplications->count()
+                )
+                    ?? 0,
+
         ];
     }
 }

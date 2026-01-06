@@ -8,6 +8,9 @@ use Inertia\Inertia;
 use App\Models\ActivityLog;
 use App\Models\Document;
 use App\Models\User;
+use App\Models\Client;
+use App\Models\Country;
+use Illuminate\Http\Request;
 
 class VisaApplicationController extends Controller
 {
@@ -57,6 +60,42 @@ class VisaApplicationController extends Controller
             'consultants' => $consultants,
             'activityLogs' => $activityLogs,
         ]);
+    }
+    public function create()
+    {
+        $this->authorize('create', VisaApplication::class);
+
+        return Inertia::render('Admin/Visas/Create', [
+            'clients' => Client::select('id', 'first_name', 'last_name')->get(),
+            'countries' => Country::with('visaTypes')->get(),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $this->authorize('create', VisaApplication::class);
+
+        $data = $request->validate([
+            'client_id'    => 'required|exists:clients,id',
+            'country_id'   => 'required|exists:countries,id',
+            'visa_type_id' => 'required|exists:visa_types,id',
+        ]);
+
+        $country = Country::findOrFail($data['country_id']);
+        $visaType = \App\Models\VisaType::findOrFail($data['visa_type_id']);
+
+        VisaApplication::create([
+            'client_id'    => $data['client_id'],
+            'country_id'   => $country->id,
+            'visa_type_id' => $visaType->id,
+            'country'      => $country->name,
+            'visa_type'    => $visaType->name,
+            'status'       => 'draft',
+        ]);
+
+        return redirect()
+            ->route('admin.visa.index')
+            ->with('success', 'Visa application created successfully.');
     }
 
 }
