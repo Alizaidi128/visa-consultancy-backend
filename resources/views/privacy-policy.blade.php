@@ -11,7 +11,7 @@
 <p>Effective Date: {{ date('Y-m-d') }}</p>
 
 <p>
-    Visa Consultancy App ("we", "our", or "us") respects your privacy and is committed
+    Visa Simplify App ("we", "our", or "us") respects your privacy and is committed
     to protecting your personal data. This Privacy Policy explains how we collect,
     use, and protect your information.
 </p>
@@ -67,7 +67,7 @@
     If you have any questions about this Privacy Policy, contact us at:
 </p>
 <p>
-    <strong>Email:</strong> support@yourdomain.com
+    <strong>Email:</strong> support@jafmatkrafts.com
 </p>
 
 </body>
