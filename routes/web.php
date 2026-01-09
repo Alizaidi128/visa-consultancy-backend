@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\VisaFamilyMemberController;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+Route::view('/privacy-policy', 'privacy-policy');
 
 /*
 |--------------------------------------------------------------------------
