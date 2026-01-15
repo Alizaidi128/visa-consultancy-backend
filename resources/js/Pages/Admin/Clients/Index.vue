@@ -1,4 +1,5 @@
 <script setup>
+import { Link } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
 
 defineProps({
@@ -9,7 +10,8 @@ defineProps({
 <template>
     <PageHeader title="Clients">
         <template #actions>
-            <a
+
+            <Link
                 href="/admin/clients/create"
                 class="
         px-4 py-2 rounded-lg border text-sm font-medium transition
@@ -17,11 +19,11 @@ border-gray-300 text-gray-700 bg-white hover:bg-gray-50
 
 dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800
 dark:hover:bg-gray-700
-
     "
             >
                 + Create Client
-            </a>
+            </Link>
+
 
         </template>
     </PageHeader>
@@ -94,7 +96,7 @@ dark:hover:bg-gray-700
                 <td class="px-6 py-4 text-right">
                     <div class="inline-flex items-center gap-4">
                         <!-- VIEW -->
-                        <a
+                        <Link
                             :href="`/admin/clients/${client.id}`"
                             class="
                 text-sm font-medium
@@ -103,10 +105,10 @@ dark:hover:bg-gray-700
             "
                         >
                             View
-                        </a>
+                        </Link>
 
                         <!-- EDIT -->
-                        <a
+                        <Link
                             :href="`/admin/clients/${client.id}/edit`"
                             class="
                 text-sm font-medium
@@ -115,7 +117,7 @@ dark:hover:bg-gray-700
             "
                         >
                             Edit
-                        </a>
+                        </Link>
                     </div>
                 </td>
 
