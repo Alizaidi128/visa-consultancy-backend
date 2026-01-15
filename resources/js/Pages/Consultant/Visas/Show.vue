@@ -3,7 +3,7 @@ import PageHeader from '@/Components/PageHeader.vue'
 import StatusBadge from '@/Components/StatusBadge.vue'
 import VisaTimeline from '@/Components/VisaTimeline.vue'
 import { router } from '@inertiajs/vue3'
-
+import { Link } from '@inertiajs/vue3'
 const props = defineProps({
     visa: Object,
     activityLogs: Array,
@@ -175,13 +175,13 @@ function allDocumentsApproved() {
                                 {{ doc.type }}
                             </span>
 
-                        <a
+                        <Link
                             :href="`/storage/${doc.file_path}`"
                             target="_blank"
                             class="mt-1 text-xs text-primary hover:underline"
                         >
                             View document
-                        </a>
+                        </Link>
                     </div>
                 </td>
 

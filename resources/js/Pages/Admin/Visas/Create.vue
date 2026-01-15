@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
-
+import { Link } from '@inertiajs/vue3'
 const props = defineProps({
     countries: Array,
     clients: Array, // ✅ ADMIN ONLY
@@ -149,7 +149,7 @@ function submit() {
             <div class="flex justify-end gap-3 pt-4">
 
                 <!-- Cancel -->
-                <a
+                <Link
                     href="/admin/visa-applications"
                     class="
                        px-4 py-2 rounded-lg text-sm font-medium
@@ -159,7 +159,7 @@ function submit() {
                     "
                 >
                     Cancel
-                </a>
+                </Link>
 
                 <!-- Submit -->
                 <button

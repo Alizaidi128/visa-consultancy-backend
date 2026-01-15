@@ -5,7 +5,7 @@ import { router } from '@inertiajs/vue3'
 import VisaTimeline from '@/Components/VisaTimeline.vue'
 import { ref } from 'vue'
 import { computed } from 'vue'
-
+import { Link } from '@inertiajs/vue3'
 const props = defineProps({
     visa: Object,
     activityLogs: Array,
@@ -477,7 +477,7 @@ const availableFamilyMembers = computed(() => {
                                 {{ doc.type }}
                             </span>
 
-                        <a
+                        <Link
                             :href="`/storage/${doc.file_path}`"
                             target="_blank"
                             class="
@@ -487,7 +487,7 @@ const availableFamilyMembers = computed(() => {
                                 "
                         >
                             View document
-                        </a>
+                        </Link>
                     </div>
                 </td>
 

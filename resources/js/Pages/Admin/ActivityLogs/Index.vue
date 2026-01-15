@@ -1,6 +1,6 @@
 <script setup>
 import PageHeader from '@/Components/PageHeader.vue'
-
+import { Link } from '@inertiajs/vue3'
 defineProps({
     logs: Object, // paginated
 })

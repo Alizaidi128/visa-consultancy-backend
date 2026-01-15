@@ -1,7 +1,7 @@
 <script setup>
 import PageHeader from '@/Components/PageHeader.vue'
 import StatusBadge from '@/Components/StatusBadge.vue'
-
+import { Link } from '@inertiajs/vue3'
 defineProps({
     visas: Array,
 })
@@ -13,7 +13,7 @@ defineProps({
         <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
 
         </h1>
-    <a
+    <Link
         href="/admin/visa-applications/create"
         class="
             inline-flex items-center gap-2
@@ -26,7 +26,7 @@ defineProps({
         "
     >
         + Create Visa
-    </a>
+    </Link>
     </div>
     <!-- Table Card -->
     <div
@@ -132,7 +132,7 @@ defineProps({
 
                 <!-- Actions -->
                 <td class="px-6 py-4 text-right">
-                    <a
+                    <Link
                         :href="`/admin/visa-applications/${visa.id}`"
                         class="
                                 text-sm font-medium
@@ -141,7 +141,7 @@ defineProps({
                             "
                     >
                         View
-                    </a>
+                    </Link>
                 </td>
             </tr>
 

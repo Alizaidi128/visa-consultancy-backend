@@ -1,7 +1,7 @@
 <script setup>
 import PageHeader from '@/Components/PageHeader.vue'
 import StatusBadge from '@/Components/StatusBadge.vue'
-
+import { Link } from '@inertiajs/vue3'
 defineProps({
     visas: Array,
 })
@@ -87,7 +87,7 @@ defineProps({
                 </td>
 
                 <td class="px-6 py-4 text-right">
-                    <a
+                    <Link
                         :href="`/consultant/visas/${visa.id}`"
                         class="
                                 text-sm font-medium
@@ -96,7 +96,7 @@ defineProps({
                             "
                     >
                         View
-                    </a>
+                    </Link>
                 </td>
             </tr>
 

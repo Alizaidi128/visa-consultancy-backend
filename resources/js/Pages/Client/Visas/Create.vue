@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
-
+import { Link } from '@inertiajs/vue3'
 const props = defineProps({
     countries: Array,
 })
@@ -109,12 +109,11 @@ function submit() {
                     </option>
                 </select>
             </div>
-
             <!-- Actions -->
             <div class="flex justify-end gap-3 pt-4">
 
                 <!-- Cancel -->
-                <a
+                <Link
                     href="/client/visas"
                     class="
                         inline-flex items-center justify-center
@@ -127,7 +126,7 @@ function submit() {
                     "
                 >
                     Cancel
-                </a>
+                </Link>
 
                 <!-- Submit -->
                 <button
