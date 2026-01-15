@@ -184,8 +184,10 @@ const availableFamilyMembers = computed(() => {
             <div>
                 <p class="text-gray-500 dark:text-gray-400">Created At</p>
                 <p class="font-medium text-gray-900 dark:text-gray-100">
-                    {{ visa.created_at }}
+
+                    {{ new Date(visa.created_at).toLocaleString() }}
                 </p>
+
             </div>
         </div>
     </div>

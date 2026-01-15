@@ -433,7 +433,8 @@ function proceedDelete() {
                 </td>
 
                 <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {{ visa.created_at }}
+<!--                    {{ visa.created_at }}-->
+                    {{ new Date(visa.created_at).toLocaleString() }}
                 </td>
             </tr>
             </tbody>

@@ -77,7 +77,8 @@ function allDocumentsApproved() {
             <div>
                 <p class="text-gray-500 dark:text-gray-400">Created</p>
                 <p class="font-medium text-gray-900 dark:text-gray-100">
-                    {{ visa.created_at }}
+
+                    {{ new Date(visa.created_at).toLocaleString() }}
                 </p>
             </div>
         </div>
