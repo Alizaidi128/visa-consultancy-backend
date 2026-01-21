@@ -26,6 +26,8 @@ use App\Http\Controllers\DocumentReviewController;
 use App\Http\Controllers\VisaReviewController;
 use App\Http\Controllers\Admin\ClientFamilyMemberController;
 use App\Http\Controllers\Admin\VisaFamilyMemberController;
+use App\Http\Controllers\Admin\VisaDeadlineController;
+
 /*
 |--------------------------------------------------------------------------
 | Root
@@ -195,6 +197,37 @@ Route::middleware(['auth', 'role:admin'])
             '/visa-applications/{visa}/family-members/{familyMember}',
             [VisaFamilyMemberController::class, 'destroy']
         )->name('visa.family-members.destroy');
+        /*
+        |--------------------------------------------------------------------------
+        | Visa Deadlines (Admin + Consultant)
+        |--------------------------------------------------------------------------
+        */
+        Route::middleware(['role:admin|consultant'])->group(function () {
+
+            // Create deadline for a visa
+            Route::post(
+                '/visas/{visa}/deadlines',
+                [VisaDeadlineController::class, 'store']
+            )->name('visas.deadlines.store');
+
+            // Update deadline
+            Route::put(
+                '/deadlines/{deadline}',
+                [VisaDeadlineController::class, 'update']
+            )->name('deadlines.update');
+
+            // Mark deadline as completed
+            Route::post(
+                '/deadlines/{deadline}/complete',
+                [VisaDeadlineController::class, 'complete']
+            )->name('deadlines.complete');
+
+            // Delete deadline
+            Route::delete(
+                '/deadlines/{deadline}',
+                [VisaDeadlineController::class, 'destroy']
+            )->name('deadlines.destroy');
+        });
 
     });
 

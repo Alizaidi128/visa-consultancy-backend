@@ -126,6 +126,52 @@ watch(
             </div>
         </div>
     </div>
+    <!-- DEADLINES -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+        <h2 class="text-sm font-semibold uppercase mb-4 text-gray-600 dark:text-gray-300">
+            Important Dates
+        </h2>
+
+        <div v-if="visa.deadlines?.length" class="space-y-3">
+            <div
+                v-for="d in visa.deadlines"
+                :key="d.id"
+                class="
+                flex items-center justify-between
+                rounded-lg border
+                border-gray-200 dark:border-gray-700
+                px-4 py-3
+            "
+            >
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {{ d.title }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Due by {{ new Date(d.due_date).toLocaleDateString() }}
+                    </p>
+                </div>
+
+                <span
+                    class="text-xs font-medium px-2 py-1 rounded-full"
+                    :class="{
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200': d.status === 'pending',
+                    'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200': d.status === 'completed',
+                    'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200': d.status === 'missed',
+                }"
+                >
+                {{ d.status }}
+            </span>
+            </div>
+        </div>
+
+        <p
+            v-else
+            class="text-sm text-gray-500 dark:text-gray-400 italic"
+        >
+            No important dates have been added yet.
+        </p>
+    </div>
 
     <!-- Submit Alert -->
     <div

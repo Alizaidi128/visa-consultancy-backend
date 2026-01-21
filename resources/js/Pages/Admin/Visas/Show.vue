@@ -11,7 +11,20 @@ const props = defineProps({
     activityLogs: Array,
     consultants: Array,
 })
+const newDeadline = ref({
+    title: '',
+    type: 'general',
+    due_date: '',
+    reminder_offsets: [7, 3, 1],
+})
+const showEditDeadlineModal = ref(false)
+const editingDeadline = ref(null)
 
+const editDeadlineForm = ref({
+    title: '',
+    due_date: '',
+    type: 'general',
+})
 function approveDocument(docId) {
     router.post(
         `/documents/${docId}/approve`,
@@ -135,6 +148,84 @@ const availableFamilyMembers = computed(() => {
         m => !attachedIds.includes(m.id)
     )
 })
+function createDeadline() {
+    router.post(
+        `/admin/visas/${props.visa.id}/deadlines`,
+        newDeadline.value,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                newDeadline.value = {
+                    title: '',
+                    type: 'general',
+                    due_date: '',
+                    reminder_offsets: [7, 3, 1],
+                }
+            },
+        }
+    )
+}
+function completeDeadline(deadlineId) {
+    if (!confirm('Mark this deadline as completed?')) return
+
+    router.post(
+        `/admin/deadlines/${deadlineId}/complete`,
+        {},
+        { preserveScroll: true }
+    )
+}
+
+
+const showDeleteDeadlineModal = ref(false)
+const deletingDeadline = ref(null)
+
+function confirmDeleteDeadline(deadline) {
+    deletingDeadline.value = deadline
+    showDeleteDeadlineModal.value = true
+}
+
+function cancelDeleteDeadline() {
+    showDeleteDeadlineModal.value = false
+    deletingDeadline.value = null
+}
+
+function proceedDeleteDeadline() {
+    router.delete(
+        `/admin/deadlines/${deletingDeadline.value.id}`,
+        {
+            preserveScroll: true,
+            onSuccess: cancelDeleteDeadline,
+        }
+    )
+}
+
+function openEditDeadline(deadline) {
+    editingDeadline.value = deadline
+
+    editDeadlineForm.value = {
+        title: deadline.title,
+        due_date: deadline.due_date,
+        type: deadline.type ?? 'general',
+    }
+
+    showEditDeadlineModal.value = true
+}
+
+function cancelEditDeadline() {
+    showEditDeadlineModal.value = false
+    editingDeadline.value = null
+}
+
+function updateDeadline() {
+    router.put(
+        `/admin/deadlines/${editingDeadline.value.id}`,
+        editDeadlineForm.value,
+        {
+            preserveScroll: true,
+            onSuccess: cancelEditDeadline,
+        }
+    )
+}
 
 </script>
 
@@ -249,6 +340,139 @@ const availableFamilyMembers = computed(() => {
             </button>
         </div>
     </div>
+    <!-- DEADLINES -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+        <h2 class="text-sm font-semibold uppercase mb-4 text-gray-600 dark:text-gray-300">
+            Deadlines
+        </h2>
+
+        <!-- Existing Deadlines -->
+        <div v-if="visa.deadlines?.length" class="space-y-3 mb-6">
+            <div
+                v-for="d in (visa.deadlines || []).filter(Boolean)"
+                :key="d.id"
+                class="
+            rounded-lg border
+            border-gray-200 dark:border-gray-700
+            px-4 py-3
+        "
+            >
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ d.title ?? 'Untitled Deadline' }}
+                        </p>
+
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Due:
+                            {{ d.due_date
+                            ? new Date(d.due_date).toLocaleDateString()
+                            : '—'
+                            }}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <!-- Status -->
+                        <span
+                            class="text-xs font-medium px-2 py-1 rounded-full"
+                            :class="{
+                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200':
+                            d.status === 'pending',
+                        'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200':
+                            d.status === 'completed',
+                        'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200':
+                            d.status === 'missed',
+                    }"
+                        >
+                    {{ d.status
+                            ? d.status.charAt(0).toUpperCase() + d.status.slice(1)
+                            : 'Unknown'
+                            }}
+                </span>
+
+                        <!-- Edit -->
+                        <button
+                            @click="openEditDeadline(d)"
+                            class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                            Edit
+                        </button>
+
+                        <!-- Complete -->
+                        <button
+                            v-if="d.status === 'pending'"
+                            @click="completeDeadline(d.id)"
+                            class="text-xs font-medium text-green-600 dark:text-green-400 hover:underline"
+                        >
+                            Complete
+                        </button>
+
+                        <!-- Delete -->
+                        <button
+                            @click="confirmDeleteDeadline(d)"
+                            class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <p
+            v-else
+            class="text-sm text-gray-500 dark:text-gray-400 italic mb-6"
+        >
+            No deadlines added yet.
+        </p>
+
+        <!-- Add Deadline Form -->
+        <form @submit.prevent="createDeadline" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+                v-model="newDeadline.title"
+                type="text"
+                placeholder="Deadline title"
+                class="
+                rounded-lg border
+                border-gray-300 dark:border-gray-600
+                bg-white dark:bg-gray-900
+                text-gray-900 dark:text-gray-100
+                px-3 py-2 text-sm
+            "
+                required
+            />
+
+            <input
+                v-model="newDeadline.due_date"
+                type="date"
+                :min="new Date().toISOString().split('T')[0]"
+                class="
+        rounded-lg border
+        border-gray-300 dark:border-gray-600
+        bg-white dark:bg-gray-900
+        text-gray-900 dark:text-gray-100
+        px-3 py-2 text-sm
+    "
+                required
+            />
+
+
+            <button
+                type="submit"
+                class="
+                px-4 py-2 rounded-lg
+                bg-blue-600 hover:bg-blue-700
+                text-white text-sm font-medium
+            "
+            >
+                Add Deadline
+            </button>
+        </form>
+    </div>
+
     <!-- FAMILY MEMBERS ON VISA -->
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-5">
@@ -557,6 +781,127 @@ const availableFamilyMembers = computed(() => {
     </div>
 
     <VisaTimeline :logs="activityLogs" class="mt-6" />
+    <!-- EDIT DEADLINE MODAL -->
+    <div
+        v-if="showEditDeadlineModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    >
+        <div class="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Edit Deadline
+            </h3>
+
+            <form @submit.prevent="updateDeadline" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        Title
+                    </label>
+                    <input
+                        v-model="editDeadlineForm.title"
+                        type="text"
+                        required
+                        class="
+                        w-full rounded-lg border
+                        border-gray-300 dark:border-gray-600
+                        bg-white dark:bg-gray-900
+                        text-gray-900 dark:text-gray-100
+                        px-3 py-2 text-sm
+                    "
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                        Due Date
+                    </label>
+                    <input
+                        v-model="editDeadlineForm.due_date"
+                        type="date"
+                        :min="new Date().toISOString().split('T')[0]"
+                        required
+                        class="
+                        w-full rounded-lg border
+                        border-gray-300 dark:border-gray-600
+                        bg-white dark:bg-gray-900
+                        text-gray-900 dark:text-gray-100
+                        px-3 py-2 text-sm
+                    "
+                    />
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button
+                        type="button"
+                        @click="cancelEditDeadline"
+                        class="
+                        px-4 py-2 rounded-lg text-sm
+                        border border-gray-300 dark:border-gray-600
+                        text-gray-700 dark:text-gray-300
+                        hover:bg-gray-100 dark:hover:bg-gray-700
+                    "
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="
+                        px-4 py-2 rounded-lg text-sm font-medium
+                        bg-blue-600 text-white hover:bg-blue-700
+                    "
+                    >
+                        Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE DEADLINE CONFIRM MODAL -->
+    <div
+        v-if="showDeleteDeadlineModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    >
+        <div class="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Delete Deadline
+            </h3>
+
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to delete the deadline
+                <span class="font-medium">
+                "{{ deletingDeadline.title }}"
+            </span>?
+                <br />
+                This action cannot be undone.
+            </p>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button
+                    @click="cancelDeleteDeadline"
+                    class="
+                    px-4 py-2 rounded-lg text-sm
+                    border border-gray-300 dark:border-gray-600
+                    text-gray-700 dark:text-gray-300
+                    hover:bg-gray-100 dark:hover:bg-gray-700
+                "
+                >
+                    Cancel
+                </button>
+
+                <button
+                    @click="proceedDeleteDeadline"
+                    class="
+                    px-4 py-2 rounded-lg text-sm font-medium
+                    bg-red-600 text-white hover:bg-red-700
+                "
+                >
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
 </template>
 
 <script>

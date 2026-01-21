@@ -10,7 +10,6 @@ class DocumentController extends Controller
 {
     public function store(Request $request, VisaApplication $visa)
     {
-        // ✅ POLICY: client can upload documents to this visa
         $this->authorize('uploadDocument', $visa);
 
         $request->validate([
@@ -18,29 +17,14 @@ class DocumentController extends Controller
             'type' => ['required', 'string'],
         ]);
 
-        // Delete old document of same type (single-upload behavior)
-        $visa->documents()
-            ->where('type', $request->type)
-            ->delete();
-
-        $path = $request->file('file')->store(
-            "visa_applications/{$visa->id}",
-            'public'
+        app(\App\Services\VisaDocumentService::class)->handleSingleUpload(
+            visa: $visa,
+            file: $request->file('file'),
+            uploadedBy: auth()->user(),
+            forcedType: $request->type
         );
-
-        $visa->documents()->create([
-            'type' => $request->type,
-            'original_name' => $request->file('file')->getClientOriginalName(),
-            'file_path' => $path,
-            'uploaded_by' => auth()->id(),
-            'status' => 'pending',
-        ]);
-
-        // Reset visa status
-        $visa->update([
-            'status' => 'documents_pending',
-        ]);
 
         return back()->with('success', 'Document uploaded successfully');
     }
+
 }

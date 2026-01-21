@@ -8,6 +8,7 @@ use App\Models\VisaApplication;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use App\Models\ActivityLog;
+use App\Models\Deadline;
 
 class VisaDocumentService
 {
@@ -18,7 +19,6 @@ class VisaDocumentService
         ?string $forcedType = null
     ): ?Document {
 
-        // Load visa type & required documents
         $visa->loadMissing('visaType.requiredDocuments');
 
         if (! $visa->visaType) {
@@ -30,30 +30,22 @@ class VisaDocumentService
         | Determine document type
         |--------------------------------------------------------------------------
         */
-
-        // ✅ SINGLE UPLOAD: trust provided type (NO filename matching)
         if ($forcedType) {
             $matchedType = $forcedType;
-        }
-
-        // ✅ BULK UPLOAD: match filename to required documents
-        else {
+        } else {
             $filename = Str::lower($file->getClientOriginalName());
             $matchedType = null;
-
-            $filename = Str::lower($file->getClientOriginalName());
 
             foreach ($visa->visaType->requiredDocuments as $doc) {
                 $docType = Str::lower($doc->document_type);
 
-                // Normalize both sides
                 $cleanDocType = preg_replace('/[^a-z0-9 ]/', '', $docType);
                 $cleanFilename = preg_replace('/[^a-z0-9 ]/', '', $filename);
 
-                // Split document type into keywords
-                $keywords = array_filter(explode(' ', $cleanDocType), function ($word) {
-                    return strlen($word) >= 3; // ignore "of", "to", etc.
-                });
+                $keywords = array_filter(
+                    explode(' ', $cleanDocType),
+                    fn ($w) => strlen($w) >= 3
+                );
 
                 foreach ($keywords as $word) {
                     if (Str::contains($cleanFilename, $word)) {
@@ -62,7 +54,6 @@ class VisaDocumentService
                     }
                 }
             }
-
 
             if (! $matchedType) {
                 throw new \Exception('Unable to match document type.');
@@ -74,19 +65,18 @@ class VisaDocumentService
         | Prevent overwrite of approved documents
         |--------------------------------------------------------------------------
         */
-        $approvedExists = Document::where('visa_application_id', $visa->id)
-            ->where('type', $matchedType)
-            ->where('status', 'approved')
-            ->exists();
-
-        if ($approvedExists) {
-           // throw new \Exception("Approved document already exists for {$matchedType}");
+        if (
+            Document::where('visa_application_id', $visa->id)
+                ->where('type', $matchedType)
+                ->where('status', 'approved')
+                ->exists()
+        ) {
             return null;
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Remove old non-approved docs of same type
+        | Remove old non-approved docs of same type (versioning)
         |--------------------------------------------------------------------------
         */
         Document::where('visa_application_id', $visa->id)
@@ -117,9 +107,10 @@ class VisaDocumentService
             'uploaded_by' => $uploadedBy->id,
             'status' => 'pending',
         ]);
+
         ActivityLog::create([
             'action'        => 'document_uploaded',
-            'loggable_type' => \App\Models\Document::class,
+            'loggable_type' => Document::class,
             'loggable_id'   => $document->id,
             'user_id'       => $uploadedBy->id,
             'data'          => [
@@ -127,6 +118,22 @@ class VisaDocumentService
                 'via'  => 'api',
             ],
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | ✅ PHASE 6 — COMPLETE PENDING RE-UPLOAD DEADLINE (BY TYPE)
+        |--------------------------------------------------------------------------
+        */
+        Deadline::where('visa_application_id', $visa->id)
+            ->where('type', 'document_reupload')
+            ->where('document_type', strtolower(trim($document->type)))
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+
+
         /*
         |--------------------------------------------------------------------------
         | Reset visa status

@@ -16,6 +16,8 @@ use App\Policies\DocumentPolicy;
 use App\Policies\UserPolicy;
 use App\Models\Client;
 use App\Policies\ClientPolicy;
+use App\Models\Deadline;
+use App\Policies\DeadlinePolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class AuthServiceProvider extends ServiceProvider
         Document::class => DocumentPolicy::class,
         User::class => UserPolicy::class,
         Client::class => ClientPolicy::class,
+        Deadline::class => DeadlinePolicy::class,
     ];
 
     /**

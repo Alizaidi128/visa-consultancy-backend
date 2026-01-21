@@ -31,4 +31,20 @@ class SystemNotification extends Notification
             'data' => $this->data,
         ]);
     }
+    public static function fromDeadline(array $data): array
+    {
+        return [
+            'title' => $data['event'] === 'missed'
+                ? 'Deadline Missed'
+                : 'Upcoming Deadline',
+
+            'message' => $data['event'] === 'missed'
+                ? "You missed the deadline: {$data['title']}"
+                : "Upcoming deadline: {$data['title']} (Due {$data['due_date']})",
+
+            'action_url' => "/visas/{$data['visa_id']}",
+            'type' => 'deadline',
+        ];
+    }
+
 }

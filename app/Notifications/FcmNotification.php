@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Deadline;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Fcm\FcmChannel;
 use NotificationChannels\Fcm\FcmMessage;
@@ -37,4 +38,23 @@ class FcmNotification extends Notification
             'data' => $this->data,
         ];
     }
+    public static function deadline(Deadline $deadline, string $event): array
+    {
+        return [
+            'title' => $event === 'missed'
+                ? 'Deadline Missed'
+                : 'Upcoming Deadline',
+
+            'body' => $event === 'missed'
+                ? "You missed: {$deadline->title}"
+                : "Reminder: {$deadline->title} is due on {$deadline->due_date->toDateString()}",
+
+            'data' => [
+                'type' => 'deadline',
+                'deadline_id' => $deadline->id,
+                'visa_id' => $deadline->visa_application_id,
+            ],
+        ];
+    }
+
 }

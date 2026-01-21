@@ -38,6 +38,7 @@ class VisaApplicationController extends Controller
             'documents' => fn ($q) => $q->latest(),
             'documents.uploader',
             'consultant',
+            'deadlines.creator',
         ]);
 
         $consultants = User::role('consultant')

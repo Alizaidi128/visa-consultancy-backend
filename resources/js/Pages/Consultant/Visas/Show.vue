@@ -4,9 +4,17 @@ import StatusBadge from '@/Components/StatusBadge.vue'
 import VisaTimeline from '@/Components/VisaTimeline.vue'
 import { router } from '@inertiajs/vue3'
 import { Link } from '@inertiajs/vue3'
+import { ref } from 'vue'
+
 const props = defineProps({
     visa: Object,
     activityLogs: Array,
+})
+const newDeadline = ref({
+    title: '',
+    type: 'general',
+    due_date: '',
+    reminder_offsets: [7, 3, 1],
 })
 
 function approveDocument(docId) {
@@ -39,6 +47,23 @@ function rejectVisa() {
 function allDocumentsApproved() {
     return props.visa.documents.length > 0 &&
         props.visa.documents.every(d => d.status === 'approved')
+}
+function createDeadline() {
+    router.post(
+        `/admin/visas/${props.visa.id}/deadlines`,
+        newDeadline.value,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                newDeadline.value = {
+                    title: '',
+                    type: 'general',
+                    due_date: '',
+                    reminder_offsets: [7, 3, 1],
+                }
+            },
+        }
+    )
 }
 
 </script>
@@ -82,6 +107,92 @@ function allDocumentsApproved() {
                 </p>
             </div>
         </div>
+    </div>
+    <!-- DEADLINES -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+        <h2 class="text-sm font-semibold uppercase mb-4 text-gray-600 dark:text-gray-300">
+            Deadlines
+        </h2>
+
+        <!-- Existing Deadlines -->
+        <div v-if="visa.deadlines?.length" class="space-y-3 mb-6">
+            <div
+                v-for="d in visa.deadlines"
+                :key="d.id"
+                class="
+                flex items-center justify-between
+                rounded-lg border
+                border-gray-200 dark:border-gray-700
+                px-4 py-3
+            "
+            >
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {{ d.title }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Due: {{ new Date(d.due_date).toLocaleDateString() }}
+                    </p>
+                </div>
+
+                <span
+                    class="text-xs font-medium px-2 py-1 rounded-full"
+                    :class="{
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200': d.status === 'pending',
+                    'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200': d.status === 'completed',
+                    'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200': d.status === 'missed',
+                }"
+                >
+                {{ d.status }}
+            </span>
+            </div>
+        </div>
+
+        <p v-else class="text-sm text-gray-500 dark:text-gray-400 italic mb-6">
+            No deadlines added yet.
+        </p>
+
+        <!-- Add Deadline -->
+        <form @submit.prevent="createDeadline" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+                v-model="newDeadline.title"
+                type="text"
+                placeholder="Deadline title"
+                class="
+                rounded-lg border
+                border-gray-300 dark:border-gray-600
+                bg-white dark:bg-gray-900
+                text-gray-900 dark:text-gray-100
+                px-3 py-2 text-sm
+            "
+                required
+            />
+
+            <input
+                v-model="newDeadline.due_date"
+                type="date"
+                :min="new Date().toISOString().split('T')[0]"
+                class="
+                rounded-lg border
+                border-gray-300 dark:border-gray-600
+                bg-white dark:bg-gray-900
+                text-gray-900 dark:text-gray-100
+                px-3 py-2 text-sm
+            "
+                required
+            />
+
+            <button
+                type="submit"
+                class="
+                px-4 py-2 rounded-lg
+                bg-blue-600 hover:bg-blue-700
+                text-white text-sm font-medium
+            "
+            >
+                Add Deadline
+            </button>
+        </form>
     </div>
 
     <!-- Final Decision -->

@@ -11,6 +11,9 @@ use App\Models\Client;
 use App\Models\VisaType;
 use App\Models\Country;
 use App\Models\RequiredDocument;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Deadline;
+
 
 class VisaApplication extends Model
 {
@@ -257,6 +260,10 @@ class VisaApplication extends Model
             \App\Models\ClientFamilyMember::class,
             'visa_application_family_member'
         )->withPivot('role')->withTimestamps();
+    }
+    public function deadlines(): HasMany
+    {
+        return $this->hasMany(Deadline::class);
     }
 
 

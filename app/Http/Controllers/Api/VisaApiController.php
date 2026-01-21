@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\VisaApplication;
-use App\Http\Resources\VisaApplicationResource;
 use Illuminate\Http\Request;
 use App\Models\ActivityLog;
 
@@ -35,8 +34,6 @@ class VisaApiController extends Controller
         return $query->get(); // admin
     }
 
-
-
     public function show(VisaApplication $visa)
     {
         $this->authorize('view', $visa);
@@ -47,7 +44,8 @@ class VisaApiController extends Controller
             'consultant',
             'country',
             'visaType',
-            'familyMembers', // ✅ LOAD RELATIONSHIP
+            'familyMembers',
+            'deadlines', // ✅ PHASE 7 — LOAD DEADLINES
         ]);
 
         return response()->json([
@@ -91,6 +89,16 @@ class VisaApiController extends Controller
                     'view_url' => url("/api/v1/documents/{$doc->id}/view"),
                 ]),
 
+                // ✅ PHASE 7 — DEADLINES FOR MOBILE (READ-ONLY)
+                'deadlines' => $visa->deadlines->map(fn ($d) => [
+                    'id' => $d->id,
+                    'type' => $d->type,
+                    'title' => $d->title,
+                    'status' => $d->status,
+                    'due_date' => $d->due_date->toDateString(),
+                    'document_type' => $d->document_type,
+                    'completed_at' => optional($d->completed_at)?->toDateTimeString(),
+                ]),
 
                 'family_members' =>
                     \App\Http\Resources\ClientFamilyMemberResource::collection(
@@ -98,10 +106,7 @@ class VisaApiController extends Controller
                     ),
             ],
         ]);
-
     }
-
-
 
     public function store(Request $request)
     {
@@ -169,8 +174,4 @@ class VisaApiController extends Controller
             'visa' => $visa,
         ]);
     }
-
-
-
-
 }

@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\ActivityLog;
 use App\Notifications\SystemNotification;
 use App\Services\FcmSender;
+use App\Models\Deadline;
+use Carbon\Carbon;
 
 class DocumentReviewController extends Controller
 {
@@ -27,14 +29,12 @@ class DocumentReviewController extends Controller
             'data'          => ['type' => $document->type],
         ]);
 
-        // ✅ CORRECT RELATIONSHIP ACCESS
         $clientUser = $document->visaApplication?->client?->user;
 
         if (! $clientUser) {
             return back()->with('error', 'Client user not found.');
         }
 
-        // ✅ DATABASE NOTIFICATION
         $clientUser->notify(new SystemNotification(
             type: 'document_approved',
             title: 'Document Approved',
@@ -46,7 +46,6 @@ class DocumentReviewController extends Controller
             ]
         ));
 
-        // ✅ PUSH NOTIFICATION
         FcmSender::send(
             user: $clientUser,
             title: 'Document Approved',
@@ -108,6 +107,38 @@ class DocumentReviewController extends Controller
                 'visa_id' => (string) $document->visa_application_id,
             ]
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ✅ PHASE 6 — CREATE / UPDATE RE-UPLOAD DEADLINE (BY TYPE)
+        |--------------------------------------------------------------------------
+        */
+
+        $visa = $document->visaApplication;
+        $dueDate = Carbon::now()->addDays(7);
+
+        $existingDeadline = Deadline::where('visa_application_id', $visa->id)
+            ->where('type', 'document_reupload')
+            ->where('document_type', $document->type)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingDeadline) {
+            $existingDeadline->update([
+                'due_date' => $dueDate,
+            ]);
+        } else {
+            Deadline::create([
+                'visa_application_id' => $visa->id,
+                'document_type' => strtolower(trim($document->type)),
+                'type' => 'document_reupload',
+                'title' => "Re-upload required: {$document->type}",
+                'due_date' => $dueDate,
+                'reminder_offsets' => [3, 1],
+                'status' => 'pending',
+                'created_by' => auth()->id(),
+            ]);
+        }
 
         return back()->with('success', 'Document rejected.');
     }

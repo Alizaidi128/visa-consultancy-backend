@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\VisaApplication;
-use App\Models\Document;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Services\VisaDocumentService;
 
 class VisaBulkDocumentController extends Controller
 {
@@ -44,6 +43,8 @@ class VisaBulkDocumentController extends Controller
         $uploaded = [];
         $unmatched = [];
 
+        $service = app(VisaDocumentService::class);
+
         foreach ($request->file('files') as $file) {
             $originalName = $file->getClientOriginalName();
             $lowerName = Str::lower($originalName);
@@ -61,57 +62,26 @@ class VisaBulkDocumentController extends Controller
 
             $matchedType = $requiredTypes[$matchedKey];
 
-            // Skip if approved document already exists
-            $approvedExists = Document::where('visa_application_id', $visa->id)
-                ->where('type', $matchedType)
-                ->where('status', 'approved')
-                ->exists();
+            try {
+                $document = $service->handleSingleUpload(
+                    visa: $visa,
+                    file: $file,
+                    uploadedBy: auth()->user(),
+                    forcedType: $matchedType
+                );
 
-            if ($approvedExists) {
-                continue;
+                if ($document) {
+                    $uploaded[] = [
+                        'file' => $originalName,
+                        'type' => $matchedType,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                $unmatched[] = [
+                    'name' => $originalName,
+                    'error' => $e->getMessage(),
+                ];
             }
-
-            // Remove previous non-approved documents
-            Document::where('visa_application_id', $visa->id)
-                ->where('type', $matchedType)
-                ->where('status', '!=', 'approved')
-                ->delete();
-
-            $path = $file->store(
-                "visa_applications/{$visa->id}",
-                'public'
-            );
-
-            $document = Document::create([
-                'visa_application_id' => $visa->id,
-                'type' => $matchedType,
-                'original_name' => $originalName,
-                'file_path' => $path,
-                'uploaded_by' => auth()->id(),
-                'status' => 'pending',
-            ]);
-
-            ActivityLog::create([
-                'loggable_type' => Document::class,
-                'loggable_id' => $document->id,
-                'action' => 'document_uploaded',
-                'performed_by' => auth()->id(),
-                'data' => json_encode([
-                    'type' => $matchedType,
-                    'bulk' => true,
-                ]),
-            ]);
-
-            $uploaded[] = [
-                'file' => $originalName,
-                'type' => $matchedType,
-            ];
-        }
-
-        if (! empty($uploaded)) {
-            $visa->update([
-                'status' => 'documents_pending',
-            ]);
         }
 
         return back()->with([
