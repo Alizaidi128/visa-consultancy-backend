@@ -247,6 +247,9 @@ Route::middleware(['auth', 'role:admin'])
             '/appointments/{appointment}/reschedule',
             [AppointmentController::class, 'reschedule']
         )->name('appointments.reschedule');
+        Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])
+            ->name('appointments.show');
+
 
     });
 

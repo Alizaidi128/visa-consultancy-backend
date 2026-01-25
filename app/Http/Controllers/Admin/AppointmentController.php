@@ -5,12 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Client;
+use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\WhatsAppMessages;
+use App\Jobs\SendWhatsAppMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
 {
+    /**
+     * Appointments table view
+     */
     public function index()
     {
         $this->authorize('manage', Appointment::class);
@@ -21,9 +28,25 @@ class AppointmentController extends Controller
                 ->get(),
         ]);
     }
+    /**
+     * Show appointment details
+     */
+    public function show(Appointment $appointment)
+    {
+        $this->authorize('manage', Appointment::class);
+
+        return inertia('Admin/Appointments/Show', [
+            'appointment' => $appointment->load([
+                'client',
+                'visaApplication',
+                'creator',
+            ]),
+        ]);
+    }
+
 
     /**
-     * Show create appointment form
+     * Create form
      */
     public function create()
     {
@@ -51,6 +74,10 @@ class AppointmentController extends Controller
         ]);
 
         DB::transaction(function () use ($data) {
+
+            /* -------------------------------
+               Time-slot conflict check
+            -------------------------------- */
             $conflict = Appointment::query()
                 ->where('scheduled_date', $data['scheduled_date'])
                 ->whereIn('status', ['scheduled', 'rescheduled'])
@@ -66,9 +93,14 @@ class AppointmentController extends Controller
                 ->exists();
 
             if ($conflict) {
-                abort(422, 'Selected time slot is no longer available.');
+                throw ValidationException::withMessages([
+                    'from_time' => 'Selected time slot is no longer available.',
+                ]);
             }
 
+            /* -------------------------------
+               Create appointment
+            -------------------------------- */
             $appointment = Appointment::create([
                 ...$data,
                 'created_by' => auth()->id(),
@@ -81,13 +113,41 @@ class AppointmentController extends Controller
                 $data
             );
 
+            /* -------------------------------
+               Notify Client (Email + DB)
+            -------------------------------- */
             $appointment->client->user?->notify(
                 new \App\Notifications\AppointmentScheduledNotification($appointment)
             );
+
+            /* -------------------------------
+               WhatsApp → Admin & Consultant (QUEUED)
+            -------------------------------- */
+            $recipients = User::role(['admin', 'consultant'])
+                ->whereNotNull('phone')
+                ->get();
+
+            $message = WhatsAppMessages::appointmentCreated($appointment);
+
+            foreach ($recipients as $user) {
+                if (!preg_match('/^[1-9][0-9]{7,14}$/', $user->phone)) {
+                    logger()->warning('Invalid WhatsApp phone skipped', [
+                        'user_id' => $user->id,
+                        'phone' => $user->phone,
+                    ]);
+                    continue;
+                }
+
+                SendWhatsAppMessage::dispatch($user->phone, $message);
+            }
         });
 
         return redirect()->route('admin.appointments.index');
     }
+
+    /**
+     * Reschedule appointment
+     */
     public function reschedule(Request $request, Appointment $appointment)
     {
         $this->authorize('manage', Appointment::class);
@@ -113,15 +173,45 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($conflict) {
-            abort(422, 'Selected time slot is no longer available.');
+            throw ValidationException::withMessages([
+                'from_time' => 'Selected time slot is no longer available.',
+            ]);
         }
 
         $appointment->update([
             ...$data,
             'status' => 'rescheduled',
         ]);
+
+        ActivityLogger::log(
+            'appointment_rescheduled',
+            $appointment,
+            $data
+        );
+
+        /* -------------------------------
+           WhatsApp → Admin & Consultant
+        -------------------------------- */
+        $recipients = User::role(['admin', 'consultant'])
+            ->whereNotNull('phone')
+            ->get();
+
+        $message = WhatsAppMessages::appointmentRescheduled($appointment);
+
+        foreach ($recipients as $user) {
+            if (!preg_match('/^[1-9][0-9]{7,14}$/', $user->phone)) {
+                continue;
+            }
+
+            SendWhatsAppMessage::dispatch($user->phone, $message);
+        }
+
+        return back();
     }
 
+    /**
+     * Calendar view
+     */
     public function calendar()
     {
         return inertia('Admin/Appointments/Calendar', [
@@ -133,6 +223,4 @@ class AppointmentController extends Controller
                 ]),
         ]);
     }
-
-
 }

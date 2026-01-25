@@ -39,8 +39,14 @@ const selectClient = (client) => {
 }
 
 const submit = () => {
-    form.post('/admin/appointments')
+    form.post('/admin/appointments', {
+        preserveScroll: true,
+        onFinish: () => {
+            // ensures loader always stops
+        },
+    })
 }
+
 
 const handleClickOutside = (e) => {
     if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
@@ -229,18 +235,57 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <!-- Actions -->
             <div class="flex justify-end gap-3 pt-4">
+                <div v-if="form.errors" class="space-y-2">
+                    <p
+                        v-for="(error, key) in form.errors"
+                        :key="key"
+                        class="text-sm text-red-600 dark:text-red-400"
+                    >
+                        {{ error }}
+                    </p>
+                </div>
+
                 <button
                     type="submit"
+                    :disabled="form.processing"
                     class="
-                        inline-flex items-center gap-2
-                        px-5 py-2 rounded-lg text-sm font-medium
-                        bg-primary text-white
-                        hover:bg-primary-dark
-                        transition
-                    "
+        inline-flex items-center gap-2
+        px-5 py-2 rounded-lg text-sm font-medium
+        bg-primary text-white
+        hover:bg-primary-dark
+        transition
+        disabled:opacity-60
+        disabled:cursor-not-allowed
+    "
                 >
-                    Book Appointment
+                    <svg
+                        v-if="form.processing"
+                        class="animate-spin h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        />
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                    </svg>
+
+                    <span>
+        {{ form.processing ? 'Booking...' : 'Book Appointment' }}
+    </span>
                 </button>
+
+
             </div>
 
         </form>

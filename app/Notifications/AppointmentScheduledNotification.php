@@ -34,7 +34,7 @@ class AppointmentScheduledNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Your Appointment Has Been Scheduled')
-            ->greeting('Hello ' . ($notifiable->name ?? ''))
+            ->line('Hello ' . ($notifiable->name ?? ''))
             ->line('Your appointment has been successfully scheduled.')
             ->line('📅 Date: ' . $this->appointment->scheduled_date->format('d M Y'))
             ->line('⏰ Time: ' . $this->appointment->from_time . ' - ' . $this->appointment->to_time)

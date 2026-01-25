@@ -19,7 +19,7 @@ class PasswordChangedNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Your password has been changed')
-            ->greeting('Hello ' . $notifiable->name . ',')
+            ->line('Hello ' . $notifiable->name . ',')
             ->line('This is a confirmation that your account password was changed successfully.')
             ->line('If you did not perform this action, please contact our support team immediately.')
             ->line('For your security, we recommend reviewing your recent account activity.')
