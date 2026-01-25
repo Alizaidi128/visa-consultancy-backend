@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Client;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\WhatsAppMessages;
@@ -15,14 +16,16 @@ use Illuminate\Validation\ValidationException;
 class AppointmentApiController extends Controller
 {
     /**
-     * List appointments (role-aware, hide completed/cancelled)
+     * List appointments
+     * - hide completed / cancelled
+     * - role aware
      */
     public function index(Request $request)
     {
         $user = $request->user();
 
         $query = Appointment::with(['client', 'visaApplication'])
-            ->visible(); // ✅ scheduled + rescheduled only
+            ->visible(); // scheduled + rescheduled only
 
         // 👤 Client → only own
         if ($user->hasRole('client')) {
@@ -31,9 +34,9 @@ class AppointmentApiController extends Controller
             );
         }
 
-        // 🧑‍💼 Consultant → only assigned visas
+        // 🧑‍💼 Consultant → via CLIENT assignment (FIXED)
         if ($user->hasRole('consultant')) {
-            $query->whereHas('visaApplication', fn ($q) =>
+            $query->whereHas('client.visaApplications', fn ($q) =>
             $q->where('consultant_id', $user->id)
             );
         }
@@ -50,7 +53,7 @@ class AppointmentApiController extends Controller
     {
         $this->authorize('view', $appointment);
 
-        // ❌ Block viewing cancelled/completed from mobile
+        // ❌ Hide cancelled / completed from mobile
         if (! $appointment->isActive()) {
             abort(404);
         }
@@ -76,18 +79,30 @@ class AppointmentApiController extends Controller
             'notes'               => ['nullable', 'string'],
         ]);
 
+        // 🔒 Consultant can only create for assigned CLIENT
+        if (auth()->user()->hasRole('consultant')) {
+            abort_unless(
+                Client::where('id', $data['client_id'])
+                    ->whereHas('visaApplications', fn ($q) =>
+                    $q->where('consultant_id', auth()->id())
+                    )
+                    ->exists(),
+                403
+            );
+        }
+
         $appointment = DB::transaction(function () use ($data) {
 
-            // 🔒 Conflict check (ACTIVE appointments only)
+            // 🔒 Conflict check (ACTIVE only)
             $conflict = Appointment::active()
                 ->where('scheduled_date', $data['scheduled_date'])
                 ->where(function ($q) use ($data) {
                     $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
                         ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
-                        ->orWhere(function ($q) use ($data) {
-                            $q->where('from_time', '<=', $data['from_time'])
-                                ->where('to_time', '>=', $data['to_time']);
-                        });
+                        ->orWhere(fn ($q) =>
+                        $q->where('from_time', '<=', $data['from_time'])
+                            ->where('to_time', '>=', $data['to_time'])
+                        );
                 })
                 ->lockForUpdate()
                 ->exists();
@@ -106,6 +121,10 @@ class AppointmentApiController extends Controller
 
             ActivityLogger::log('appointment_created', $appointment, $data);
 
+            // 📧 Notify client
+            $appointment->client->user?->notify(
+                new \App\Notifications\AppointmentScheduledNotification($appointment)
+            );
 
             // 📲 WhatsApp → Admin & Consultant
             $recipients = User::role(['admin', 'consultant'])
@@ -150,10 +169,10 @@ class AppointmentApiController extends Controller
             ->where(function ($q) use ($data) {
                 $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
                     ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
-                    ->orWhere(function ($q) use ($data) {
-                        $q->where('from_time', '<=', $data['from_time'])
-                            ->where('to_time', '>=', $data['to_time']);
-                    });
+                    ->orWhere(fn ($q) =>
+                    $q->where('from_time', '<=', $data['from_time'])
+                        ->where('to_time', '>=', $data['to_time'])
+                    );
             })
             ->exists();
 
@@ -180,7 +199,6 @@ class AppointmentApiController extends Controller
     {
         $this->authorize('manage', $appointment);
 
-        // ❌ Already cancelled / completed
         if (! $appointment->isActive()) {
             return response()->json($appointment);
         }

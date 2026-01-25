@@ -99,7 +99,7 @@ const consultantMenu = [
         items: [
             { icon: GridIcon, name: 'Dashboard', path: '/consultant/dashboard' },
             { icon: ListIcon, name: 'Assigned Visas', path: '/consultant/visas' },
-
+            { icon: ListIcon, name: 'Appointments', path: '/consultant/appointments' },
         ],
     },
 ]
@@ -110,6 +110,7 @@ const clientMenu = [
         items: [
             { icon: GridIcon, name: 'Dashboard', path: '/client/dashboard' },
             { icon: ListIcon, name: 'My Visa Applications', path: '/client/visas' },
+            { icon: ListIcon, name: 'Appointments', path: '/client/appointments' },
         ],
     },
 ]

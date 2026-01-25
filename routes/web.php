@@ -28,7 +28,9 @@ use App\Http\Controllers\Admin\ClientFamilyMemberController;
 use App\Http\Controllers\Admin\VisaFamilyMemberController;
 use App\Http\Controllers\Admin\VisaDeadlineController;
 use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
+use App\Http\Controllers\Consultant\AppointmentController as ConsultantAppointmentController;
 use App\Http\Controllers\Client\AppointmentController as ClientAppointmentController;
+
 /*
 |--------------------------------------------------------------------------
 | Root
@@ -276,6 +278,31 @@ Route::middleware(['auth', 'verified', 'role:consultant'])
 
         Route::get('/visas/{visa}', [ConsultantVisaController::class, 'show'])
             ->name('visas.show');
+
+        Route::get('/appointments', [ConsultantAppointmentController::class, 'index'])
+            ->name('appointments.index');
+
+        Route::get('/appointments/create', [ConsultantAppointmentController::class, 'create'])
+            ->name('appointments.create');
+
+        Route::post('/appointments', [ConsultantAppointmentController::class, 'store'])
+            ->name('appointments.store');
+
+        Route::get('/appointments/calendar', [ConsultantAppointmentController::class, 'calendar'])
+            ->name('appointments.calendar');
+
+        Route::put(
+            '/appointments/{appointment}/reschedule',
+            [ConsultantAppointmentController::class, 'reschedule']
+        )->name('appointments.reschedule');
+
+        Route::put(
+            '/appointments/{appointment}/cancel',
+            [ConsultantAppointmentController::class, 'cancel']
+        )->name('appointments.cancel');
+
+        Route::get('/appointments/{appointment}', [ConsultantAppointmentController::class, 'show'])
+            ->name('appointments.show');
     });
 
 /*
