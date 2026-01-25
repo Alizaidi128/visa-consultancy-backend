@@ -23,15 +23,18 @@ class DocumentReviewed extends Notification
     public function toDatabase($notifiable): array
     {
         return [
-            'document_type' => $this->document->type,
-            'status' => $this->document->status,
+            'document_type'    => $this->document->type,
+            'status'           => $this->document->status,
+            'rejection_reason' => $this->document->review_remarks, // ✅
         ];
     }
+
 
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
             ->subject('Document Reviewed')
             ->line("Your document '{$this->document->type}' was {$this->document->status}");
+
     }
 }

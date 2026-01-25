@@ -22,24 +22,32 @@ class Document extends Model
         'review_remarks',
     ];
 
+    // ✅ ADD THIS
+    protected $appends = ['rejection_reason'];
+
+    // ✅ ADD THIS
+    public function getRejectionReasonAttribute()
+    {
+        return $this->review_remarks;
+    }
 
     public function visaApplication()
     {
         return $this->belongsTo(VisaApplication::class, 'visa_application_id');
     }
 
-
     public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
+
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
+
     public function deadlines(): HasMany
     {
         return $this->hasMany(Deadline::class);
     }
-
 }

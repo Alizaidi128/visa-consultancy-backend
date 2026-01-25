@@ -114,24 +114,29 @@ class VisaReviewApiController extends Controller
             $clientUser->notify(new SystemNotification(
                 type: 'document_rejected',
                 title: 'Document Rejected',
-                message: "{$document->type} was rejected.",
+                message: "{$document->type} was rejected because {$document->review_remarks}.",
                 data: [
-                    'visa_id'     => $document->visa_application_id,
-                    'document_id' => $document->id,
-                    'screen'      => 'visa_detail',
+                    'visa_id'          => $document->visa_application_id,
+                    'document_id'      => $document->id,
+                    'document_type'    => $document->type,
+                    'status'           => 'rejected',
+                    'rejection_reason' => $document->review_remarks, // ✅ ADD
+                    'screen'           => 'visa_detail',
                 ]
             ));
+
 
             // ✅ PUSH
             FcmSender::send(
                 user: $clientUser,
                 title: 'Document Rejected',
-                body: "{$document->type} was rejected.",
+                body: "{$document->type} was rejected because {$document->review_remarks}.",
                 data: [
                     'screen'  => 'visa_detail',
                     'visa_id' => (string) $document->visa_application_id,
                 ]
             );
+
         }
 
         return response()->json([
