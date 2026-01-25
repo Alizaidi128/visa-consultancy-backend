@@ -27,7 +27,7 @@ use App\Http\Controllers\VisaReviewController;
 use App\Http\Controllers\Admin\ClientFamilyMemberController;
 use App\Http\Controllers\Admin\VisaFamilyMemberController;
 use App\Http\Controllers\Admin\VisaDeadlineController;
-
+use App\Http\Controllers\Admin\AppointmentController;
 /*
 |--------------------------------------------------------------------------
 | Root
@@ -227,7 +227,22 @@ Route::middleware(['auth', 'role:admin'])
                 '/deadlines/{deadline}',
                 [VisaDeadlineController::class, 'destroy']
             )->name('deadlines.destroy');
+
         });
+        /*
+        |--------------------------------------------------------------------------
+        | Appointments (Admin)
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/appointments', [AppointmentController::class, 'index'])
+            ->name('appointments.index');
+        Route::get('/appointments/create', [AppointmentController::class, 'create'])
+            ->name('appointments.create');
+
+        Route::post('/appointments', [AppointmentController::class, 'store'])
+            ->name('appointments.store');
+        Route::get('/appointments/calendar', [AppointmentController::class, 'calendar'])
+            ->name('appointments.calendar');
 
     });
 

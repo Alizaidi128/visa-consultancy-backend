@@ -74,6 +74,7 @@ const adminMenu = [
             },
 
             { icon: ListIcon, name: 'Visa Applications', path: '/admin/visa-applications' },
+            { icon: ListIcon, name: 'Appointments', path: '/admin/appointments' },
 
     {
         icon: BoxCubeIcon,
