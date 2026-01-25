@@ -106,10 +106,6 @@ class AppointmentApiController extends Controller
 
             ActivityLogger::log('appointment_created', $appointment, $data);
 
-            // 📧 Notify client
-            $appointment->client->user?->notify(
-                new \App\Notifications\AppointmentScheduledNotification($appointment)
-            );
 
             // 📲 WhatsApp → Admin & Consultant
             $recipients = User::role(['admin', 'consultant'])
