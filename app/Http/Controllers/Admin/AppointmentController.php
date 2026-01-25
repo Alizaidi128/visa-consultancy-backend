@@ -88,6 +88,40 @@ class AppointmentController extends Controller
 
         return redirect()->route('admin.appointments.index');
     }
+    public function reschedule(Request $request, Appointment $appointment)
+    {
+        $this->authorize('manage', Appointment::class);
+
+        $data = $request->validate([
+            'scheduled_date' => ['required', 'date', 'after_or_equal:today'],
+            'from_time' => ['required', 'date_format:H:i'],
+            'to_time' => ['required', 'date_format:H:i', 'after:from_time'],
+        ]);
+
+        $conflict = Appointment::query()
+            ->where('id', '!=', $appointment->id)
+            ->where('scheduled_date', $data['scheduled_date'])
+            ->whereIn('status', ['scheduled', 'rescheduled'])
+            ->where(function ($q) use ($data) {
+                $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
+                    ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
+                    ->orWhere(function ($q) use ($data) {
+                        $q->where('from_time', '<=', $data['from_time'])
+                            ->where('to_time', '>=', $data['to_time']);
+                    });
+            })
+            ->exists();
+
+        if ($conflict) {
+            abort(422, 'Selected time slot is no longer available.');
+        }
+
+        $appointment->update([
+            ...$data,
+            'status' => 'rescheduled',
+        ]);
+    }
+
     public function calendar()
     {
         return inertia('Admin/Appointments/Calendar', [

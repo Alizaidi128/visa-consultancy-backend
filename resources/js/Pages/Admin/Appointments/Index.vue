@@ -24,29 +24,29 @@ const formatTime = (time) => {
 
 <template>
     <PageHeader title="Appointments" />
-    <Link
-        href="/admin/appointments/calendar"
-        class="
-                inline-flex items-center gap-2
-                px-4 py-2 rounded-lg text-sm font-medium
-                border border-gray-300 dark:border-gray-600
-                text-gray-700 dark:text-gray-300
-                bg-white dark:bg-gray-800
-                hover:bg-gray-100 dark:hover:bg-gray-700
-                transition
-            "
-    >
-        Calender View
-    </Link>
+
     <!-- Header Actions -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-6 gap-2">
+        <Link
+            href="/admin/appointments/calendar"
+            class="
+                px-4 py-2 rounded-lg text-sm font-medium
+                        border border-gray-300 dark:border-gray-600
+                        text-gray-700 dark:text-gray-300
+                        bg-white dark:bg-gray-800
+                        hover:bg-gray-100 dark:hover:bg-gray-700
+                        transition
+            "
+        >
+            Calender View
+        </Link>
         <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100"></h1>
 
 
         <Link
             href="/admin/appointments/create"
             class="
-                inline-flex items-center gap-2
+                  inline-flex items-center gap-2
                 px-4 py-2 rounded-lg text-sm font-medium
                 border border-gray-300 dark:border-gray-600
                 text-gray-700 dark:text-gray-300

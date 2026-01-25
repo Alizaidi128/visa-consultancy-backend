@@ -9,6 +9,8 @@ import listPlugin from '@fullcalendar/list'
 import interactionPlugin from '@fullcalendar/interaction'
 
 import { computed, watchEffect } from 'vue'
+import axios from 'axios'
+import { ref } from 'vue'
 
 /* ---------------------------------------
    Props
@@ -19,29 +21,42 @@ const props = defineProps({
         default: () => [],
     },
 })
+/* ---------------------------------------
+   Error Modal State
+---------------------------------------- */
+const showErrorModal = ref(false)
+const errorMessage = ref('')
+/* ---------------------------------------
+   Status → Color Map
+---------------------------------------- */
+const statusColorClass = {
+    scheduled: 'fc-event-scheduled',
+    rescheduled: 'fc-event-rescheduled',
+    completed: 'fc-event-completed',
+    cancelled: 'fc-event-cancelled',
+}
 
 /* ---------------------------------------
    Map appointments → calendar events
 ---------------------------------------- */
 const events = computed(() =>
     props.appointments.map(a => {
-        // Extract YYYY-MM-DD ONLY (no timezone)
         const date = a.scheduled_date.split('T')[0]
 
         return {
             id: a.id,
             title: `${a.client?.first_name ?? ''} ${a.client?.last_name ?? ''}`.trim(),
-
-            // 🔑 IMPORTANT: DO NOT let Date() parse this
             start: `${date}T${a.from_time}`,
             end: `${date}T${a.to_time}`,
 
             extendedProps: {
                 status: a.status,
+                colorClass: statusColorClass[a.status] ?? 'fc-event-default',
             },
         }
     })
 )
+
 
 
 
@@ -56,6 +71,10 @@ const calendarOptions = computed(() => ({
         listPlugin,
         interactionPlugin,
     ],
+
+    editable: true,
+    eventDurationEditable: true,
+    eventStartEditable: true,
 
     initialView: 'dayGridMonth',
 
@@ -82,19 +101,53 @@ const calendarOptions = computed(() => ({
 
         const title = arg.event.title
 
+        const colorClass = arg.event.extendedProps.colorClass
+
         return {
             html: `
-                <div class="fc-custom-event">
-                    <div class="fc-event-time">${time}</div>
-                    <div class="fc-event-title">${title}</div>
-                </div>
-            `,
+        <div class="fc-custom-event ${colorClass}">
+            <div class="fc-event-time">${time}</div>
+            <div class="fc-event-title">${title}</div>
+        </div>
+    `,
         }
+
     },
 
     eventClick(info) {
         window.location.href = `/admin/appointments/${info.event.id}`
     },
+    eventDrop(info) {
+        const event = info.event
+
+        const start = event.start
+        const end = event.end
+
+        // Safety check
+        if (!start || !end) {
+            info.revert()
+            return
+        }
+
+        const payload = {
+            scheduled_date: start.toISOString().split('T')[0],
+            from_time: start.toTimeString().slice(0, 5),
+            to_time: end.toTimeString().slice(0, 5),
+        }
+
+        axios.put(`/admin/appointments/${event.id}/reschedule`, payload)
+            .catch(error => {
+                info.revert()
+
+                errorMessage.value =
+                    error?.response?.data?.message ??
+                    'Selected time slot is not available.'
+
+                showErrorModal.value = true
+
+            })
+    },
+
 }))
 
 </script>
@@ -121,10 +174,13 @@ const calendarOptions = computed(() => ({
                 <Link
                     href="/admin/appointments/create"
                     class="
-                        px-4 py-2 rounded-lg text-sm font-medium
-                        bg-primary text-white
-                        hover:bg-primary-dark
-                        transition
+                       inline-flex items-center gap-2
+                px-4 py-2 rounded-lg text-sm font-medium
+                border border-gray-300 dark:border-gray-600
+                text-gray-700 dark:text-gray-300
+                bg-white dark:bg-gray-800
+                hover:bg-gray-100 dark:hover:bg-gray-700
+                transition
                     "
                 >
                     + Create Appointment
@@ -143,6 +199,44 @@ const calendarOptions = computed(() => ({
     >
         <FullCalendar :options="calendarOptions" />
     </div>
+    <!-- APPOINTMENT ERROR MODAL -->
+    <div
+        v-if="showErrorModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    >
+        <div
+            class="
+            w-full max-w-sm
+            rounded-xl
+            bg-white dark:bg-gray-800
+            p-6
+            shadow-xl
+        "
+        >
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Appointment Conflict
+            </h3>
+
+            <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                {{ errorMessage }}
+            </p>
+
+            <div class="mt-6 flex justify-end">
+                <button
+                    @click="showErrorModal = false"
+                    class="
+                    px-4 py-2 rounded-lg text-sm font-medium
+                    bg-blue-600 text-white
+                    hover:bg-blue-700
+                    transition
+                "
+                >
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
 </template>
 
 <script>
@@ -178,6 +272,25 @@ export default {
     font-size: 12px;
     line-height: 1.2;
     cursor: pointer;
+}/* -------------------------------
+   Base Calendar Cleanup
+-------------------------------- */
+.fc .fc-daygrid-event {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* -------------------------------
+   Custom Event Card
+-------------------------------- */
+.fc-custom-event {
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+    color: white;
 }
 
 /* Time */
@@ -195,11 +308,26 @@ export default {
 }
 
 /* -------------------------------
-   Dark Mode
+   Status Colors (Light + Dark)
 -------------------------------- */
-.dark .fc-custom-event {
-    background-color: rgb(30 64 175); /* blue-800 */
-    color: rgb(219 234 254); /* blue-100 */
+.fc-event-scheduled {
+    background-color: rgb(59 130 246); /* blue-500 */
+}
+
+.fc-event-rescheduled {
+    background-color: rgb(245 158 11); /* amber-500 */
+}
+
+.fc-event-completed {
+    background-color: rgb(16 185 129); /* emerald-500 */
+}
+
+.fc-event-cancelled {
+    background-color: rgb(239 68 68); /* red-500 */
+}
+
+.fc-event-default {
+    background-color: rgb(107 114 128); /* gray-500 */
 }
 
 /* -------------------------------
@@ -208,5 +336,6 @@ export default {
 .fc-custom-event:hover {
     opacity: 0.9;
 }
+
 </style>
 

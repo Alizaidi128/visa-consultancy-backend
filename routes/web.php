@@ -243,6 +243,10 @@ Route::middleware(['auth', 'role:admin'])
             ->name('appointments.store');
         Route::get('/appointments/calendar', [AppointmentController::class, 'calendar'])
             ->name('appointments.calendar');
+        Route::put(
+            '/appointments/{appointment}/reschedule',
+            [AppointmentController::class, 'reschedule']
+        )->name('appointments.reschedule');
 
     });
 
