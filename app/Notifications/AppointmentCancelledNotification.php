@@ -39,11 +39,19 @@ class AppointmentCancelledNotification extends Notification implements ShouldQue
     public function toArray(object $notifiable): array
     {
         return [
+            'title' => 'Appointment Cancelled',
+            'message' => sprintf(
+                'Your appointment on %s has been cancelled.',
+                $this->appointment->scheduled_date->format('d/m/Y')
+            ),
+
+            'type' => 'appointment',
+            'event' => 'cancelled',
             'appointment_id' => $this->appointment->id,
-            'status' => 'cancelled',
             'scheduled_date' => $this->appointment->scheduled_date->format('Y-m-d'),
             'from_time' => $this->appointment->from_time,
             'to_time' => $this->appointment->to_time,
         ];
     }
+
 }

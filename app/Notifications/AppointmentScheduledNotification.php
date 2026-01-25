@@ -51,6 +51,15 @@ class AppointmentScheduledNotification extends Notification
     public function toArray($notifiable): array
     {
         return [
+            'title' => 'Appointment Scheduled',
+            'message' => sprintf(
+                'Your appointment is scheduled on %s from %s to %s.',
+                $this->appointment->scheduled_date->format('d/m/Y'),
+                substr($this->appointment->from_time, 0, 5),
+                substr($this->appointment->to_time, 0, 5),
+            ),
+
+            // keep structured data
             'type' => 'appointment',
             'event' => 'scheduled',
             'appointment_id' => $this->appointment->id,
@@ -61,4 +70,5 @@ class AppointmentScheduledNotification extends Notification
             'action_url' => '/client/appointments',
         ];
     }
+
 }

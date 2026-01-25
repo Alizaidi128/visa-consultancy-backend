@@ -22,14 +22,24 @@ class DeadlineReminderNotification extends Notification
 
     public function toArray($notifiable): array
     {
+        $isMissed = $this->event === 'missed';
+
         return [
+            'title' => $isMissed
+                ? 'Deadline Missed'
+                : 'Upcoming Deadline',
+
+            'message' => $isMissed
+                ? "You missed the deadline: {$this->deadline->title}."
+                : "Reminder: {$this->deadline->title} is due on {$this->deadline->due_date->format('d/m/Y')}.",
+
             'type' => 'deadline',
-            'event' => $this->event, // reminder | missed
+            'event' => $this->event,
             'deadline_id' => $this->deadline->id,
-            'title' => $this->deadline->title,
             'due_date' => $this->deadline->due_date->toDateString(),
             'visa_id' => $this->deadline->visa_application_id,
             'status' => $this->deadline->status,
         ];
     }
+
 }
