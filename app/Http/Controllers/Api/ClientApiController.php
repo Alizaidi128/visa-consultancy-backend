@@ -15,6 +15,9 @@ class ClientApiController extends Controller
     /**
      * List clients (Admin / Consultant)
      */
+    /**
+     * List clients (Admin / Consultant)
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -25,12 +28,19 @@ class ClientApiController extends Controller
         );
 
         $clients = Client::withCount('visaApplications')
+            ->when(
+                $user->hasRole('consultant'),
+                fn ($q) =>
+                $q->whereHas('visaApplications', fn ($v) =>
+                $v->where('consultant_id', $user->id)
+                )
+            )
             ->latest()
             ->paginate(10);
 
-
         return ClientResource::collection($clients);
     }
+
 
     /**
      * Show single client
