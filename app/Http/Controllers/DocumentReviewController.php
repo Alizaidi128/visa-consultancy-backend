@@ -90,23 +90,28 @@ class DocumentReviewController extends Controller
         $clientUser->notify(new SystemNotification(
             type: 'document_rejected',
             title: 'Document Rejected',
-            message: "{$document->type} was rejected.",
+            message: "{$document->type} was rejected because {$request->remarks}.",
             data: [
-                'visa_id'     => $document->visa_application_id,
-                'document_id' => $document->id,
-                'screen'      => 'visa_detail',
+                'visa_id'          => $document->visa_application_id,
+                'document_id'      => $document->id,
+                'document_type'    => $document->type,
+                'status'           => 'rejected',
+                'rejection_reason' => $request->remarks, // ✅ critical
+                'screen'           => 'visa_detail',
             ]
         ));
 
         FcmSender::send(
             user: $clientUser,
             title: 'Document Rejected',
-            body: "{$document->type} was rejected.",
+            body: "{$document->type} was rejected because {$request->remarks}.",
             data: [
-                'screen'  => 'visa_detail',
-                'visa_id' => (string) $document->visa_application_id,
+                'screen'           => 'visa_detail',
+                'visa_id'          => (string) $document->visa_application_id,
+                'rejection_reason' => $request->remarks,
             ]
         );
+
 
         /*
         |--------------------------------------------------------------------------

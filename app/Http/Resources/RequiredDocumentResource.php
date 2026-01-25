@@ -12,7 +12,11 @@ class RequiredDocumentResource extends JsonResource
         return [
             'id'           => $this->id,
             'name'         => $this->document_type,
+            'rejection_reason' => $this->review_remarks,
             'is_mandatory' => (bool) $this->pivot->is_mandatory,
+
+
+
         ];
     }
 }
