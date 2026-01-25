@@ -27,7 +27,8 @@ use App\Http\Controllers\VisaReviewController;
 use App\Http\Controllers\Admin\ClientFamilyMemberController;
 use App\Http\Controllers\Admin\VisaFamilyMemberController;
 use App\Http\Controllers\Admin\VisaDeadlineController;
-use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
+use App\Http\Controllers\Client\AppointmentController as ClientAppointmentController;
 /*
 |--------------------------------------------------------------------------
 | Root
@@ -234,20 +235,20 @@ Route::middleware(['auth', 'role:admin'])
         | Appointments (Admin)
         |--------------------------------------------------------------------------
         */
-        Route::get('/appointments', [AppointmentController::class, 'index'])
+        Route::get('/appointments', [AdminAppointmentController::class, 'index'])
             ->name('appointments.index');
-        Route::get('/appointments/create', [AppointmentController::class, 'create'])
+        Route::get('/appointments/create', [AdminAppointmentController::class, 'create'])
             ->name('appointments.create');
 
-        Route::post('/appointments', [AppointmentController::class, 'store'])
+        Route::post('/appointments', [AdminAppointmentController::class, 'store'])
             ->name('appointments.store');
-        Route::get('/appointments/calendar', [AppointmentController::class, 'calendar'])
+        Route::get('/appointments/calendar', [AdminAppointmentController::class, 'calendar'])
             ->name('appointments.calendar');
         Route::put(
             '/appointments/{appointment}/reschedule',
-            [AppointmentController::class, 'reschedule']
+            [AdminAppointmentController::class, 'reschedule']
         )->name('appointments.reschedule');
-        Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])
+        Route::get('/appointments/{appointment}', [AdminAppointmentController::class, 'show'])
             ->name('appointments.show');
 
 
@@ -307,6 +308,12 @@ Route::middleware(['auth', 'verified', 'role:client'])
             VisaBulkDocumentController::class,
             'store',
         ])->name('visa.documents.bulk');
+        Route::get('/appointments', [ClientAppointmentController::class, 'index'])
+            ->name('appointments.index');
+
+        Route::get('/appointments/{appointment}', [ClientAppointmentController::class, 'show'])
+            ->name('appointments.show');
+
     });
 
 require __DIR__ . '/auth.php';

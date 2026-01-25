@@ -15,6 +15,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Api\ClientApiController;
 use App\Http\Controllers\Api\ClientFamilyMemberApiController;
 use App\Http\Controllers\Api\VisaFamilyMemberApiController;
+use App\Http\Controllers\Api\AppointmentApiController;
+
 
 Route::prefix('v1')->group(function () {
     Route::get('/debug/firebase', function () {
@@ -146,5 +148,14 @@ Route::prefix('v1')->group(function () {
             '/documents/{document}/view',
             [VisaDocumentApiController::class, 'view']
         );
+        // 📅 Appointments
+        Route::get('/appointments', [AppointmentApiController::class, 'index']);
+        Route::get('/appointments/{appointment}', [AppointmentApiController::class, 'show']);
+        Route::post('/appointments', [AppointmentApiController::class, 'store']);
+        Route::put(
+            '/appointments/{appointment}/reschedule',
+            [AppointmentApiController::class, 'reschedule']
+        );
+
     });
 });
