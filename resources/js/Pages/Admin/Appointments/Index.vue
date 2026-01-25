@@ -1,11 +1,12 @@
 <script setup>
 import PageHeader from '@/Components/PageHeader.vue'
 import StatusBadge from '@/Components/StatusBadge.vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 
 defineProps({
     appointments: Array,
 })
+
 const formatTime = (time) => {
     if (!time) return '—'
 
@@ -20,6 +21,18 @@ const formatTime = (time) => {
     })
 }
 
+const cancelAppointment = (appointment) => {
+    if (appointment.status === 'cancelled') return
+
+    if (!confirm('Are you sure you want to cancel this appointment?')) {
+        return
+    }
+
+    router.put(`/admin/appointments/${appointment.id}/cancel`, {}, {
+        preserveScroll: true,
+    })
+
+}
 </script>
 
 <template>
@@ -31,22 +44,20 @@ const formatTime = (time) => {
             href="/admin/appointments/calendar"
             class="
                 px-4 py-2 rounded-lg text-sm font-medium
-                        border border-gray-300 dark:border-gray-600
-                        text-gray-700 dark:text-gray-300
-                        bg-white dark:bg-gray-800
-                        hover:bg-gray-100 dark:hover:bg-gray-700
-                        transition
+                border border-gray-300 dark:border-gray-600
+                text-gray-700 dark:text-gray-300
+                bg-white dark:bg-gray-800
+                hover:bg-gray-100 dark:hover:bg-gray-700
+                transition
             "
         >
-            Calender View
+            Calendar View
         </Link>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100"></h1>
-
 
         <Link
             href="/admin/appointments/create"
             class="
-                  inline-flex items-center gap-2
+                inline-flex items-center gap-2
                 px-4 py-2 rounded-lg text-sm font-medium
                 border border-gray-300 dark:border-gray-600
                 text-gray-700 dark:text-gray-300
@@ -71,48 +82,19 @@ const formatTime = (time) => {
             <!-- Header -->
             <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-                <th
-                    class="
-                            px-6 py-3 text-left text-xs font-semibold uppercase
-                            text-gray-600 dark:text-gray-300
-                        "
-                >
+                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">
                     Client
                 </th>
-
-                <th
-                    class="
-                            px-6 py-3 text-left text-xs font-semibold uppercase
-                            text-gray-600 dark:text-gray-300
-                        "
-                >
+                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">
                     Date
                 </th>
-
-                <th
-                    class="
-                            px-6 py-3 text-left text-xs font-semibold uppercase
-                            text-gray-600 dark:text-gray-300
-                        "
-                >
+                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">
                     Time
                 </th>
-
-                <th
-                    class="
-                            px-6 py-3 text-center text-xs font-semibold uppercase
-                            text-gray-600 dark:text-gray-300
-                        "
-                >
+                <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">
                     Status
                 </th>
-
-                <th
-                    class="
-                            px-6 py-3 text-right text-xs font-semibold uppercase
-                            text-gray-600 dark:text-gray-300
-                        "
-                >
+                <th class="px-6 py-3 text-right text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">
                     Actions
                 </th>
             </tr>
@@ -126,41 +108,25 @@ const formatTime = (time) => {
                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
                 <!-- Client -->
-                <td
-                    class="
-                            px-6 py-4 font-medium
-                            text-gray-900 dark:text-gray-100
-                        "
-                >
+                <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
                     {{ appointment.client.first_name }}
                     {{ appointment.client.last_name }}
                 </td>
 
                 <!-- Date -->
-                <td
-                    class="
-                            px-6 py-4
-                            text-gray-700 dark:text-gray-300
-                        "
-                >
-<!--                    {{ appointment.scheduled_date }}-->
-                    {{ appointment.scheduled_date
-                    ? new Date(appointment.scheduled_date).toLocaleDateString()
-                    : '—'
+                <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
+                    {{
+                        appointment.scheduled_date
+                            ? new Date(appointment.scheduled_date).toLocaleDateString()
+                            : '—'
                     }}
                 </td>
 
                 <!-- Time -->
-                <td
-                    class="
-                            px-6 py-4
-                            text-gray-700 dark:text-gray-300
-                        "
-                >
+                <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
                     {{ formatTime(appointment.from_time) }}
                     –
                     {{ formatTime(appointment.to_time) }}
-
                 </td>
 
                 <!-- Status -->
@@ -169,7 +135,21 @@ const formatTime = (time) => {
                 </td>
 
                 <!-- Actions -->
-                <td class="px-6 py-4 text-right">
+                <td class="px-6 py-4 text-right space-x-3">
+                    <!-- Cancel -->
+                    <button
+                        v-if="appointment.status !== 'cancelled'"
+                        @click="cancelAppointment(appointment)"
+                        class="
+                                text-sm font-medium
+                                text-red-600 dark:text-red-400
+                                hover:underline
+                            "
+                    >
+                        Cancel
+                    </button>
+
+                    <!-- View -->
                     <Link
                         :href="`/admin/appointments/${appointment.id}`"
                         class="
@@ -187,10 +167,7 @@ const formatTime = (time) => {
             <tr v-if="!appointments.length">
                 <td
                     colspan="5"
-                    class="
-                            px-6 py-10 text-center text-sm
-                            text-gray-500 dark:text-gray-400
-                        "
+                    class="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
                     No appointments found.
                 </td>

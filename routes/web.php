@@ -251,6 +251,10 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/appointments/{appointment}', [AdminAppointmentController::class, 'show'])
             ->name('appointments.show');
 
+        Route::put(
+            'appointments/{appointment}/cancel',
+            [AdminAppointmentController::class, 'cancel']
+        )->name('appointments.cancel');
 
     });
 

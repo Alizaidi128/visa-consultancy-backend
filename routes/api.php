@@ -156,6 +156,9 @@ Route::prefix('v1')->group(function () {
             '/appointments/{appointment}/reschedule',
             [AppointmentApiController::class, 'reschedule']
         );
-
+        Route::put(
+            '/appointments/{appointment}/cancel',
+            [AppointmentApiController::class, 'cancel']
+        );
     });
 });

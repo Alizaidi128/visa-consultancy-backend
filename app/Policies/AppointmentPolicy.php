@@ -7,22 +7,47 @@ use App\Models\User;
 
 class AppointmentPolicy
 {
+    /**
+     * View appointment
+     */
     public function view(User $user, Appointment $appointment): bool
     {
-        if ($user->hasRole('admin')) return true;
-
-        if (
-            $user->hasRole('client') &&
-            $appointment->client?->user_id === $user->id
-        ) {
+        // Admin → everything
+        if ($user->hasRole('admin')) {
             return true;
+        }
+
+        // Consultant → only appointments of assigned visas
+        if ($user->hasRole('consultant')) {
+            return $appointment->visaApplication
+                && $appointment->visaApplication->consultant_id === $user->id;
+        }
+
+        // Client → only their own appointment
+        if ($user->hasRole('client')) {
+            return $appointment->client
+                && $appointment->client->user_id === $user->id;
         }
 
         return false;
     }
 
-    public function manage(User $user): bool
+    /**
+     * Create / reschedule / cancel appointment
+     */
+    public function manage(User $user, ?Appointment $appointment = null): bool
     {
-        return $user->hasRole('admin');
+        // Admin → always
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Consultant → only assigned visa
+        if ($user->hasRole('consultant') && $appointment) {
+            return $appointment->visaApplication
+                && $appointment->visaApplication->consultant_id === $user->id;
+        }
+
+        return false;
     }
 }

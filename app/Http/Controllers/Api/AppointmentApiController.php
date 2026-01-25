@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
-use App\Models\Client;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\WhatsAppMessages;
@@ -24,20 +23,25 @@ class AppointmentApiController extends Controller
 
         $query = Appointment::with(['client', 'visaApplication']);
 
+        // Client → only own
         if ($user->hasRole('client')) {
             $query->whereHas('client', fn ($q) =>
             $q->where('user_id', $user->id)
             );
         }
 
-        // consultants/admin → see all (can be tightened later)
-        return response()->json(
-            $query->latest()->get()
-        );
+        // Consultant → only assigned visas
+        if ($user->hasRole('consultant')) {
+            $query->whereHas('visaApplication', fn ($q) =>
+            $q->where('consultant_id', $user->id)
+            );
+        }
+
+        return response()->json($query->latest()->get());
     }
 
     /**
-     * Show appointment detail
+     * Show appointment
      */
     public function show(Appointment $appointment)
     {
@@ -56,12 +60,12 @@ class AppointmentApiController extends Controller
         $this->authorize('manage', Appointment::class);
 
         $data = $request->validate([
-            'client_id' => ['required', 'exists:clients,id'],
+            'client_id'           => ['required', 'exists:clients,id'],
             'visa_application_id' => ['nullable', 'exists:visa_applications,id'],
-            'scheduled_date' => ['required', 'date', 'after_or_equal:today'],
-            'from_time' => ['required', 'date_format:H:i'],
-            'to_time' => ['required', 'date_format:H:i', 'after:from_time'],
-            'notes' => ['nullable', 'string'],
+            'scheduled_date'      => ['required', 'date', 'after_or_equal:today'],
+            'from_time'           => ['required', 'date_format:H:i'],
+            'to_time'             => ['required', 'date_format:H:i', 'after:from_time'],
+            'notes'               => ['nullable', 'string'],
         ]);
 
         $appointment = DB::transaction(function () use ($data) {
@@ -89,17 +93,17 @@ class AppointmentApiController extends Controller
             $appointment = Appointment::create([
                 ...$data,
                 'created_by' => auth()->id(),
-                'status' => 'scheduled',
+                'status'     => 'scheduled',
             ]);
 
             ActivityLogger::log('appointment_created', $appointment, $data);
 
-            /* Notify client */
+            // Notify client
             $appointment->client->user?->notify(
                 new \App\Notifications\AppointmentScheduledNotification($appointment)
             );
 
-            /* WhatsApp → Admin & Consultant */
+            // WhatsApp → Admin & Consultant
             $recipients = User::role(['admin', 'consultant'])
                 ->whereNotNull('phone')
                 ->get();
@@ -123,12 +127,12 @@ class AppointmentApiController extends Controller
      */
     public function reschedule(Request $request, Appointment $appointment)
     {
-        $this->authorize('manage', Appointment::class);
+        $this->authorize('manage', $appointment);
 
         $data = $request->validate([
             'scheduled_date' => ['required', 'date', 'after_or_equal:today'],
-            'from_time' => ['required', 'date_format:H:i'],
-            'to_time' => ['required', 'date_format:H:i', 'after:from_time'],
+            'from_time'      => ['required', 'date_format:H:i'],
+            'to_time'        => ['required', 'date_format:H:i', 'after:from_time'],
         ]);
 
         $conflict = Appointment::query()
@@ -156,17 +160,35 @@ class AppointmentApiController extends Controller
             'status' => 'rescheduled',
         ]);
 
-        ActivityLogger::log(
-            'appointment_rescheduled',
-            $appointment,
-            $data
+        ActivityLogger::log('appointment_rescheduled', $appointment, $data);
+
+        return response()->json($appointment);
+    }
+
+    /**
+     * Cancel appointment
+     */
+    public function cancel(Appointment $appointment)
+    {
+        $this->authorize('manage', $appointment);
+
+        $appointment->update([
+            'status' => 'cancelled',
+        ]);
+
+        ActivityLogger::log('appointment_cancelled', $appointment);
+
+        // Notify client
+        $appointment->client->user?->notify(
+            new \App\Notifications\AppointmentCancelledNotification($appointment)
         );
 
+        // WhatsApp → Admin & Consultant
         $recipients = User::role(['admin', 'consultant'])
             ->whereNotNull('phone')
             ->get();
 
-        $message = WhatsAppMessages::appointmentRescheduled($appointment);
+        $message = WhatsAppMessages::appointmentCancelled($appointment);
 
         foreach ($recipients as $user) {
             if (preg_match('/^[1-9][0-9]{7,14}$/', $user->phone)) {
