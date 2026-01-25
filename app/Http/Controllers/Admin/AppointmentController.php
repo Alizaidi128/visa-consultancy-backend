@@ -24,6 +24,7 @@ class AppointmentController extends Controller
 
         return inertia('Admin/Appointments/Index', [
             'appointments' => Appointment::with(['client', 'visaApplication'])
+                ->visible()               // ✅ hide completed / cancelled
                 ->latest()
                 ->get(),
         ]);
@@ -75,10 +76,9 @@ class AppointmentController extends Controller
 
         DB::transaction(function () use ($data) {
 
-            // 🔒 Conflict check
-            $conflict = Appointment::query()
+            // 🔒 Conflict check (only ACTIVE appointments)
+            $conflict = Appointment::active()
                 ->where('scheduled_date', $data['scheduled_date'])
-                ->whereIn('status', ['scheduled', 'rescheduled'])
                 ->where(function ($q) use ($data) {
                     $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
                         ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
@@ -96,18 +96,14 @@ class AppointmentController extends Controller
                 ]);
             }
 
-            // ✅ Create
+            // ✅ Create appointment
             $appointment = Appointment::create([
                 ...$data,
                 'created_by' => auth()->id(),
-                'status'     => 'scheduled',
+                'status'     => Appointment::STATUS_SCHEDULED,
             ]);
 
-            ActivityLogger::log(
-                'appointment_created',
-                $appointment,
-                $data
-            );
+            ActivityLogger::log('appointment_created', $appointment, $data);
 
             // 📧 Notify client
             $appointment->client->user?->notify(
@@ -138,16 +134,20 @@ class AppointmentController extends Controller
     {
         $this->authorize('manage', $appointment);
 
+        // ❌ Cannot reschedule cancelled / completed
+        if (! $appointment->isActive()) {
+            abort(422, 'This appointment can no longer be rescheduled.');
+        }
+
         $data = $request->validate([
             'scheduled_date' => ['required', 'date', 'after_or_equal:today'],
             'from_time'      => ['required', 'date_format:H:i'],
             'to_time'        => ['required', 'date_format:H:i', 'after:from_time'],
         ]);
 
-        $conflict = Appointment::query()
+        $conflict = Appointment::active()
             ->where('id', '!=', $appointment->id)
             ->where('scheduled_date', $data['scheduled_date'])
-            ->whereIn('status', ['scheduled', 'rescheduled'])
             ->where(function ($q) use ($data) {
                 $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
                     ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
@@ -166,14 +166,10 @@ class AppointmentController extends Controller
 
         $appointment->update([
             ...$data,
-            'status' => 'rescheduled',
+            'status' => Appointment::STATUS_RESCHEDULED,
         ]);
 
-        ActivityLogger::log(
-            'appointment_rescheduled',
-            $appointment,
-            $data
-        );
+        ActivityLogger::log('appointment_rescheduled', $appointment, $data);
 
         // 📲 WhatsApp
         $recipients = User::role(['admin', 'consultant'])
@@ -194,28 +190,22 @@ class AppointmentController extends Controller
     /**
      * Cancel appointment
      */
-    /**
-     * Cancel appointment (Admin)
-     */
     public function cancel(Appointment $appointment)
     {
         $this->authorize('manage', $appointment);
 
-        // Prevent double cancel
-        if ($appointment->status === 'cancelled') {
+        // ❌ Already cancelled or completed
+        if (! $appointment->isActive()) {
             return back();
         }
 
         $appointment->update([
-            'status' => 'cancelled',
+            'status' => Appointment::STATUS_CANCELLED,
         ]);
 
-        ActivityLogger::log(
-            'appointment_cancelled',
-            $appointment
-        );
+        ActivityLogger::log('appointment_cancelled', $appointment);
 
-        // WhatsApp → Admin & Consultant
+        // 📲 WhatsApp
         $recipients = User::role(['admin', 'consultant'])
             ->whereNotNull('phone')
             ->get();
@@ -223,16 +213,13 @@ class AppointmentController extends Controller
         $message = WhatsAppMessages::appointmentCancelled($appointment);
 
         foreach ($recipients as $user) {
-            if (!preg_match('/^[1-9][0-9]{7,14}$/', $user->phone)) {
-                continue;
+            if (preg_match('/^[1-9][0-9]{7,14}$/', $user->phone)) {
+                SendWhatsAppMessage::dispatch($user->phone, $message);
             }
-
-            SendWhatsAppMessage::dispatch($user->phone, $message);
         }
 
         return back();
     }
-
 
     /**
      * Calendar view
@@ -243,6 +230,7 @@ class AppointmentController extends Controller
 
         return inertia('Admin/Appointments/Calendar', [
             'appointments' => Appointment::with('client')
+                ->visible() // ✅ hide completed / cancelled
                 ->get()
                 ->map(fn ($a) => [
                     ...$a->toArray(),

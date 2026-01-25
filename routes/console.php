@@ -30,3 +30,12 @@ Schedule::command('deadlines:send-reminders')
 Schedule::command('appointments:send-reminders')
     ->everyMinute()
     ->withoutOverlapping();
+/*
+|--------------------------------------------------------------------------
+| Appointment Auto-Completion
+|--------------------------------------------------------------------------
+| Marks past appointments as completed
+*/
+Schedule::command('appointments:mark-completed')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();

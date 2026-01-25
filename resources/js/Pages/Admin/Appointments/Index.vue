@@ -22,7 +22,9 @@ const formatTime = (time) => {
 }
 
 const cancelAppointment = (appointment) => {
-    if (appointment.status === 'cancelled') return
+    if (!['scheduled', 'rescheduled'].includes(appointment.status)) {
+        return
+    }
 
     if (!confirm('Are you sure you want to cancel this appointment?')) {
         return
@@ -31,8 +33,8 @@ const cancelAppointment = (appointment) => {
     router.put(`/admin/appointments/${appointment.id}/cancel`, {}, {
         preserveScroll: true,
     })
-
 }
+
 </script>
 
 <template>
@@ -103,11 +105,12 @@ const cancelAppointment = (appointment) => {
             <!-- Body -->
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
             <tr
-                v-for="appointment in appointments"
+                v-for="appointment in appointments.filter(a => !['completed'].includes(a.status))"
                 :key="appointment.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
-                <!-- Client -->
+
+            <!-- Client -->
                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
                     {{ appointment.client.first_name }}
                     {{ appointment.client.last_name }}
@@ -138,8 +141,9 @@ const cancelAppointment = (appointment) => {
                 <td class="px-6 py-4 text-right space-x-3">
                     <!-- Cancel -->
                     <button
-                        v-if="appointment.status !== 'cancelled'"
+                        v-if="appointment.status === 'scheduled' || appointment.status === 'rescheduled'"
                         @click="cancelAppointment(appointment)"
+
                         class="
                                 text-sm font-medium
                                 text-red-600 dark:text-red-400

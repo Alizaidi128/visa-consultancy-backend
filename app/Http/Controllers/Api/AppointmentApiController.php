@@ -15,29 +15,32 @@ use Illuminate\Validation\ValidationException;
 class AppointmentApiController extends Controller
 {
     /**
-     * List appointments (role-aware)
+     * List appointments (role-aware, hide completed/cancelled)
      */
     public function index(Request $request)
     {
         $user = $request->user();
 
-        $query = Appointment::with(['client', 'visaApplication']);
+        $query = Appointment::with(['client', 'visaApplication'])
+            ->visible(); // ✅ scheduled + rescheduled only
 
-        // Client → only own
+        // 👤 Client → only own
         if ($user->hasRole('client')) {
             $query->whereHas('client', fn ($q) =>
             $q->where('user_id', $user->id)
             );
         }
 
-        // Consultant → only assigned visas
+        // 🧑‍💼 Consultant → only assigned visas
         if ($user->hasRole('consultant')) {
             $query->whereHas('visaApplication', fn ($q) =>
             $q->where('consultant_id', $user->id)
             );
         }
 
-        return response()->json($query->latest()->get());
+        return response()->json(
+            $query->latest()->get()
+        );
     }
 
     /**
@@ -46,6 +49,11 @@ class AppointmentApiController extends Controller
     public function show(Appointment $appointment)
     {
         $this->authorize('view', $appointment);
+
+        // ❌ Block viewing cancelled/completed from mobile
+        if (! $appointment->isActive()) {
+            abort(404);
+        }
 
         return response()->json(
             $appointment->load(['client', 'visaApplication', 'creator'])
@@ -70,16 +78,16 @@ class AppointmentApiController extends Controller
 
         $appointment = DB::transaction(function () use ($data) {
 
-            $conflict = Appointment::query()
+            // 🔒 Conflict check (ACTIVE appointments only)
+            $conflict = Appointment::active()
                 ->where('scheduled_date', $data['scheduled_date'])
-                ->whereIn('status', ['scheduled', 'rescheduled'])
                 ->where(function ($q) use ($data) {
                     $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
                         ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
-                        ->orWhere(fn ($q) =>
-                        $q->where('from_time', '<=', $data['from_time'])
-                            ->where('to_time', '>=', $data['to_time'])
-                        );
+                        ->orWhere(function ($q) use ($data) {
+                            $q->where('from_time', '<=', $data['from_time'])
+                                ->where('to_time', '>=', $data['to_time']);
+                        });
                 })
                 ->lockForUpdate()
                 ->exists();
@@ -93,17 +101,17 @@ class AppointmentApiController extends Controller
             $appointment = Appointment::create([
                 ...$data,
                 'created_by' => auth()->id(),
-                'status'     => 'scheduled',
+                'status'     => Appointment::STATUS_SCHEDULED,
             ]);
 
             ActivityLogger::log('appointment_created', $appointment, $data);
 
-            // Notify client
+            // 📧 Notify client
             $appointment->client->user?->notify(
                 new \App\Notifications\AppointmentScheduledNotification($appointment)
             );
 
-            // WhatsApp → Admin & Consultant
+            // 📲 WhatsApp → Admin & Consultant
             $recipients = User::role(['admin', 'consultant'])
                 ->whereNotNull('phone')
                 ->get();
@@ -129,23 +137,27 @@ class AppointmentApiController extends Controller
     {
         $this->authorize('manage', $appointment);
 
+        // ❌ Cannot reschedule cancelled / completed
+        if (! $appointment->isActive()) {
+            abort(422, 'This appointment can no longer be rescheduled.');
+        }
+
         $data = $request->validate([
             'scheduled_date' => ['required', 'date', 'after_or_equal:today'],
             'from_time'      => ['required', 'date_format:H:i'],
             'to_time'        => ['required', 'date_format:H:i', 'after:from_time'],
         ]);
 
-        $conflict = Appointment::query()
+        $conflict = Appointment::active()
             ->where('id', '!=', $appointment->id)
             ->where('scheduled_date', $data['scheduled_date'])
-            ->whereIn('status', ['scheduled', 'rescheduled'])
             ->where(function ($q) use ($data) {
                 $q->whereBetween('from_time', [$data['from_time'], $data['to_time']])
                     ->orWhereBetween('to_time', [$data['from_time'], $data['to_time']])
-                    ->orWhere(fn ($q) =>
-                    $q->where('from_time', '<=', $data['from_time'])
-                        ->where('to_time', '>=', $data['to_time'])
-                    );
+                    ->orWhere(function ($q) use ($data) {
+                        $q->where('from_time', '<=', $data['from_time'])
+                            ->where('to_time', '>=', $data['to_time']);
+                    });
             })
             ->exists();
 
@@ -157,7 +169,7 @@ class AppointmentApiController extends Controller
 
         $appointment->update([
             ...$data,
-            'status' => 'rescheduled',
+            'status' => Appointment::STATUS_RESCHEDULED,
         ]);
 
         ActivityLogger::log('appointment_rescheduled', $appointment, $data);
@@ -172,18 +184,23 @@ class AppointmentApiController extends Controller
     {
         $this->authorize('manage', $appointment);
 
+        // ❌ Already cancelled / completed
+        if (! $appointment->isActive()) {
+            return response()->json($appointment);
+        }
+
         $appointment->update([
-            'status' => 'cancelled',
+            'status' => Appointment::STATUS_CANCELLED,
         ]);
 
         ActivityLogger::log('appointment_cancelled', $appointment);
 
-        // Notify client
+        // 📧 Notify client
         $appointment->client->user?->notify(
             new \App\Notifications\AppointmentCancelledNotification($appointment)
         );
 
-        // WhatsApp → Admin & Consultant
+        // 📲 WhatsApp → Admin & Consultant
         $recipients = User::role(['admin', 'consultant'])
             ->whereNotNull('phone')
             ->get();
