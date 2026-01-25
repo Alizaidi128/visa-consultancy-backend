@@ -12,21 +12,24 @@ class AppointmentPolicy
      */
     public function view(User $user, Appointment $appointment): bool
     {
-        // 👑 Admin → full access
+        // 👑 Admin → everything
         if ($user->hasRole('admin')) {
             return true;
         }
 
-        // 👤 Client → only their own appointment
+        // 👤 Client → only own appointment
         if ($user->hasRole('client')) {
             return $appointment->client
                 && $appointment->client->user_id === $user->id;
         }
 
-        // 🧑‍💼 Consultant → appointment belongs to assigned client
+        // 🧑‍💼 Consultant → appointment's CLIENT has any visa assigned to them
         if ($user->hasRole('consultant')) {
             return $appointment->client
-                && $appointment->client->consultant_id === $user->id;
+                && $appointment->client
+                    ->visaApplications()
+                    ->where('consultant_id', $user->id)
+                    ->exists();
         }
 
         return false;
@@ -53,7 +56,10 @@ class AppointmentPolicy
             // Only ACTIVE appointments for assigned clients
             return $appointment->isActive()
                 && $appointment->client
-                && $appointment->client->consultant_id === $user->id;
+                && $appointment->client
+                    ->visaApplications()
+                    ->where('consultant_id', $user->id)
+                    ->exists();
         }
 
         return false;
