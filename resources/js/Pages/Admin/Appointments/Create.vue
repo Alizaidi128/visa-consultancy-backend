@@ -249,12 +249,13 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     type="submit"
                     :disabled="form.processing"
                     class="
-        inline-flex items-center gap-2
-        px-5 py-2 rounded-lg text-sm font-medium
-        bg-primary text-white
-        hover:bg-primary-dark
-        transition
-        disabled:opacity-60
+            inline-flex items-center gap-2
+                px-4 py-2 rounded-lg text-sm font-medium
+                border border-gray-300 dark:border-gray-600
+                text-gray-700 dark:text-gray-300
+                bg-white dark:bg-gray-800
+                hover:bg-gray-100 dark:hover:bg-gray-700
+                transition
         disabled:cursor-not-allowed
     "
                 >
