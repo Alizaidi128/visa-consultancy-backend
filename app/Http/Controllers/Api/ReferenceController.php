@@ -62,13 +62,21 @@ class ReferenceController extends Controller
                 return [
                     'id' => $doc->id,
                     'name' => $doc->document_type,
-                    'is_mandatory' => $doc->is_mandatory,
+                    'is_mandatory' => (bool) $doc->is_mandatory,
+
+                    // ✅ status from uploaded document
                     'status' => $uploaded?->status ?? 'pending',
+
+                    // ✅ IMPORTANT
+                    'rejection_reason' => $uploaded?->review_remarks,
+
                     'document_id' => $uploaded?->id,
                     'file_path' => $uploaded?->file_path,
+                    'uploaded_at' => $uploaded?->created_at,
                 ];
             }),
         ]);
+
     }
 
 }
