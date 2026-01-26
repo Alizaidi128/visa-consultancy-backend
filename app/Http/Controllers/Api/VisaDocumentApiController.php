@@ -9,10 +9,23 @@ use Illuminate\Http\Request;
 use App\Models\Document;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Http\Resources\DocumentResource;
 
 
 class VisaDocumentApiController extends Controller
 {
+    public function index(VisaApplication $visa)
+    {
+        // 🔐 Client can only see own visa docs
+        $this->authorize('view', $visa);
+
+        $documents = $visa->documents()
+            ->latest()
+            ->get();
+
+        return DocumentResource::collection($documents);
+    }
+
     public function upload(
         Request $request,
         VisaApplication $visa,

@@ -160,5 +160,9 @@ Route::prefix('v1')->group(function () {
             '/appointments/{appointment}/cancel',
             [AppointmentApiController::class, 'cancel']
         );
+        Route::get(
+            '/visas/{visa}/documents',
+            [VisaDocumentApiController::class, 'index']
+        );
     });
 });
