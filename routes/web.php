@@ -40,6 +40,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 Route::view('/privacy-policy', 'privacy-policy');
+Route::view('/account-deletion', 'account-deletion');
 
 /*
 |--------------------------------------------------------------------------
